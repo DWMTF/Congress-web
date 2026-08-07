@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+@theme {
+  --color-deep: #0a4d68;
+  --color-teal: #3aafa9;
+  --color-paper: #ffffff;
+}
+
+:root {
+  --deep: #0a4d68;
+  --teal: #3aafa9;
+  --paper: #ffffff;
+
+  /* Scoped exception: a single warm ember tone used ONLY for the opening
+     "Red Mind" beat inside the MindShift signature section, per explicit
+     request. It fully dissolves before the water wash — every other
+     section in the product stays strictly within the three-colour system. */
+  --warm-ember: #b5553a;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--teal) transparent;
+}
+
+html {
+  background: var(--paper);
+}
+
+body {
+  color: var(--deep);
+  background: var(--paper);
+  font-feature-settings: "ss01" 1, "case" 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- Glass system (shared visual language with the Hero) ---------- */
+
+.glass {
+  background: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.glass-on-white {
+  background: rgba(10, 77, 104, 0.04);
+  backdrop-filter: blur(14px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  border: 1px solid rgba(10, 77, 104, 0.1);
+}
+
+.glass-highlight {
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-highlight::before {
+  content: "";
+  position: absolute;
+  inset: -40% -40% auto auto;
+  width: 60%;
+  height: 60%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.55), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+.glass-highlight:hover::before {
+  opacity: 1;
+}
+
+/* Eyebrow label style used across sections, matching the Hero's kicker */
+.eyebrow {
+  font-family: var(--font-manrope), sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+/* Sponsor marquee — duplicated content, translates exactly -50% for a seamless loop */
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
