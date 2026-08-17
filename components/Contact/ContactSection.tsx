@@ -42,7 +42,7 @@ export default function ContactSection() {
             <div>
               <dt className="text-sm text-deep/55 mb-1">Address</dt>
               <dd className="text-deep font-medium">
-                Deraniyagala Water &amp; Mountain Tourism Foundation
+                Water &amp; Mountain Tourism Foundation
                 <br />
                 Kelani River Valley, Sri Lanka
               </dd>
@@ -113,7 +113,7 @@ export default function ContactSection() {
       <footer className="border-t border-deep/10 py-10 px-2">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-deep/50">
           <p>
-            © 2027 Deraniyagala Water &amp; Mountain Tourism Foundation. All
+            © 2027 Water &amp; Mountain Tourism Foundation. All
             rights reserved.
           </p>
           <div className="flex items-center gap-6">

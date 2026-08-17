@@ -33,7 +33,7 @@ export default function Hero() {
       {/* Hero content */}
       <div className="relative z-20 flex h-full flex-col items-center justify-center text-center px-6">
         <p className="eyebrow text-teal mb-5">
-          Deraniyagala Water &amp; Mountain Tourism Foundation
+          Water &amp; Mountain Tourism Foundation
         </p>
 
         <h1 className="font-sans font-semibold text-paper text-display-md text-balance">

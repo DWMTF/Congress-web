@@ -1,29 +1,32 @@
 "use client";
 
+import { usePathname } from "next/navigation";
+
 const NAV_LINKS = [
-  { label: "About", href: "#about" },
+  { label: "About", href: "#about", hideOn: ["/register", "/press"] },
   { label: "Downloads", href: "/press" },
   { label: "Contact", href: "#contact" },
 ];
 
 export default function Navbar() {
+  const pathname = usePathname();
+
   return (
     <nav className="relative z-50 flex items-center justify-between px-6 md:px-10 py-5 bg-paper">
       {/* Logo */}
-      <div className="flex items-center gap-3">
+      <a href="/" className="flex items-center gap-3">
         <span
           className="h-8 w-8 rounded-full bg-deep"
           aria-hidden
         />
-
         <span className="font-semibold text-deep text-lg tracking-tight">
           Blue Mind Congress
         </span>
-      </div>
+      </a>
 
       {/* Navigation */}
       <div className="hidden md:flex items-center gap-10">
-        {NAV_LINKS.map((link) => (
+        {NAV_LINKS.filter((link) => !link.hideOn?.includes(pathname)).map((link) => (
           <a
             key={link.label}
             href={link.href}
@@ -39,7 +42,7 @@ export default function Navbar() {
         href="/register"
         className="rounded-full bg-deep text-paper text-sm font-medium px-5 py-2.5 hover:bg-deep/90 transition-colors"
       >
-        Register
+        Sign In
       </a>
     </nav>
   );
