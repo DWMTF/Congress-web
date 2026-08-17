@@ -5,14 +5,14 @@
  */
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Waves } from "lucide-react";
 
 const MAX_POLLS = 12;
 const POLL_INTERVAL_MS = 3000;
 
-export default function PaymentCallbackPage() {
+function CallbackInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const reference = searchParams.get("ref");
@@ -67,16 +67,36 @@ export default function PaymentCallbackPage() {
   }, [reference, router]);
 
   return (
+    <div className="text-center">
+      <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-teal/10 mb-6 animate-pulse">
+        <Waves className="h-7 w-7 text-teal" strokeWidth={1.5} />
+      </span>
+      <h1 className="font-display font-semibold text-xl text-deep mb-2">
+        Processing Payment
+      </h1>
+      <p className="text-deep/60 text-sm">{message}</p>
+    </div>
+  );
+}
+
+export default function PaymentCallbackPage() {
+  return (
     <main className="min-h-screen bg-paper flex items-center justify-center px-6">
-      <div className="text-center">
-        <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-teal/10 mb-6 animate-pulse">
-          <Waves className="h-7 w-7 text-teal" strokeWidth={1.5} />
-        </span>
-        <h1 className="font-display font-semibold text-xl text-deep mb-2">
-          Processing Payment
-        </h1>
-        <p className="text-deep/60 text-sm">{message}</p>
-      </div>
+      <Suspense
+        fallback={
+          <div className="text-center">
+            <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-teal/10 mb-6 animate-pulse">
+              <Waves className="h-7 w-7 text-teal" strokeWidth={1.5} />
+            </span>
+            <h1 className="font-display font-semibold text-xl text-deep mb-2">
+              Processing Payment
+            </h1>
+            <p className="text-deep/60 text-sm">Verifying your payment…</p>
+          </div>
+        }
+      >
+        <CallbackInner />
+      </Suspense>
     </main>
   );
 }
