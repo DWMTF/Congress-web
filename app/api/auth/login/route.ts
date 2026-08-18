@@ -45,8 +45,13 @@ export async function POST(req: NextRequest) {
       userAgent: ua,
     });
 
+    const isUnconfirmed = error.message.toLowerCase().includes("email not confirmed");
     return NextResponse.json(
-      { error: "Invalid email or password" },
+      {
+        error: isUnconfirmed
+          ? "Your email address has not been confirmed. Please contact support."
+          : "Invalid email or password",
+      },
       { status: 401 }
     );
   }
