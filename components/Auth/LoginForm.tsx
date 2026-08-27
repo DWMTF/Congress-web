@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { TextInput } from "@/components/ui/FormField";
@@ -9,9 +9,17 @@ import { Button } from "@/components/ui/Button";
 
 export default function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextUrl = searchParams.get("next");
+  const authError = searchParams.get("error");
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(
+    authError === "unauthorized_admin"
+      ? "You do not have administrator permissions to access that page."
+      : ""
+  );
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -33,7 +41,14 @@ export default function LoginForm() {
         return;
       }
 
-      router.push("/register");
+      if (nextUrl) {
+        router.push(nextUrl);
+      } else if (data.user?.isAdmin) {
+        router.push("/admin");
+      } else {
+        router.push("/payment");
+      }
+      router.refresh();
     } catch {
       setError("Network error. Please check your connection and try again.");
     } finally {

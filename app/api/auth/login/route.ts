@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getUserRole } from "@/lib/auth/roles";
 import { logger } from "@/lib/logger";
 
 function ipFrom(req: NextRequest): string {
@@ -56,11 +57,23 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const role = await getUserRole(data.user.id);
+  const isAdmin = role === "admin" || role === "super_admin";
+
   await logger.info("AUTH_LOGIN", `User logged in`, {
-    metadata: { userId: data.user.id, email },
+    metadata: { userId: data.user.id, email, role },
     ipAddress: ip,
     userAgent: ua,
   });
 
-  return NextResponse.json({ message: "Logged in successfully" });
+  return NextResponse.json({
+    message: "Logged in successfully",
+    user: {
+      id: data.user.id,
+      email: data.user.email,
+      role,
+      isAdmin,
+    },
+  });
 }
+
