@@ -7,7 +7,8 @@ import { ChevronDown, LogOut, CreditCard, LayoutDashboard, Shield } from "lucide
 import { createClient } from "@/lib/supabase/client";
 
 const NAV_LINKS = [
-  { label: "About", href: "#about", hideOn: ["/register", "/press", "/admin"] },
+  { label: "About", href: "/#about", hideOn: ["/register", "/press", "/admin", "/sponsorship"] },
+  { label: "Sponsorship", href: "/sponsorship" },
   { label: "Downloads", href: "/press" },
   { label: "Contact", href: "#contact" },
 ];
