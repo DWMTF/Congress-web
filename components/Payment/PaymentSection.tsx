@@ -134,7 +134,7 @@ export default function PaymentSection() {
                   Why watch from home when you can be part of the experience?
                 </h2>
                 <p className="text-sm text-deep/60 mb-5">
-                  Join us in person on the riverbank — immerse yourself in the full Congress atmosphere, connect with speakers, and be there for every moment live.
+                  Join us in person on the riverbank immerse yourself in the full Congress atmosphere, connect with speakers, and be there for every moment live.
                 </p>
                 <button
                   onClick={() => handleChangeAttendance("in-person")}

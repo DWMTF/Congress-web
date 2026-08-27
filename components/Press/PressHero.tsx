@@ -6,7 +6,7 @@ export default function PressHero() {
         Everything you need to cover the Congress.
       </h1>
       <p className="mt-5 text-deep/65 text-lg max-w-xl mx-auto text-balance">
-        Approved assets, facts and figures — ready to use, no permissions
+        Approved assets, facts and figures ready to use, no permissions
         needed.
       </p>
     </section>

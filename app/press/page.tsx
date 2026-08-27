@@ -6,7 +6,7 @@ import ContactSection from "@/components/Contact/ContactSection";
 import Navbar from "@/components/Navbar";
 
 export const metadata = {
-  title: "Press & Media Kit — Blue Mind Congress 2027",
+  title: "Press & Media Kit",
 };
 
 export default function PressPage() {

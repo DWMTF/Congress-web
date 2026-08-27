@@ -12,7 +12,7 @@ const PILLARS = [
     title: "Neuroscience of Water",
     subtitle: "The Science of Healing",
     description:
-      "Investigating the scientifically backed 'Blue Mind' state — how proximity to moving waters lowers cortisol, stimulates neuroplasticity, and sparks creative clarity.",
+      "Investigating the scientifically backed 'Blue Mind' state how proximity to moving waters lowers cortisol, stimulates neuroplasticity, and sparks creative clarity.",
   },
   {
     icon: Mountain,
@@ -26,7 +26,7 @@ const PILLARS = [
     title: "Global Leadership Convergence",
     subtitle: "40+ Nations Connected",
     description:
-      "Uniting over 1,200 in-person leaders and 10,000+ global livestream delegates — including scientists, government ministers, hotel leaders, and youth activists.",
+      "Uniting over 1,200 in-person leaders and 10,000+ global livestream delegates including scientists, government ministers, hotel leaders, and youth activists.",
   },
 ];
 

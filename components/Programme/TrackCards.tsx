@@ -10,7 +10,7 @@ const TRACKS = [
     number: "01",
     title: "Science & Policy",
     description:
-      "Peer-reviewed research on water, cognition and wellbeing — and what it means for how cities plan around blue space.",
+      "Peer-reviewed research on water, cognition and wellbeing and what it means for how cities plan around blue space.",
   },
   {
     icon: Compass,
@@ -24,7 +24,7 @@ const TRACKS = [
     number: "03",
     title: "Public & Community",
     description:
-      "Local voices, river custodianship and public health outreach — grounding the Congress in the valley that hosts it.",
+      "Local voices, river custodianship and public health outreach grounding the Congress in the valley that hosts it.",
   },
 ];
 

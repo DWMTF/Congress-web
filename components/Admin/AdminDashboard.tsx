@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import dynamic from "next/dynamic";
 import {
   Users,
   CreditCard,
@@ -22,9 +23,28 @@ import {
   X,
   Eye,
   Info,
+  Radio,
+  Copy,
+  Check,
+  EyeOff,
+  Video,
+  Trash2,
+  PlusCircle,
+  ExternalLink,
 } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
+
+// Dynamically import MuxPlayer for the admin preview to prevent SSR hydration errors
+const MuxPlayer = dynamic(() => import("@mux/mux-player-react"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full aspect-video bg-deep/90 flex flex-col items-center justify-center text-paper rounded-2xl animate-pulse">
+      <Radio className="h-8 w-8 text-teal animate-spin mb-2" />
+      <p className="text-xs font-medium">Loading stream preview...</p>
+    </div>
+  ),
+});
 
 interface AdminUser {
   id: string;
@@ -83,6 +103,19 @@ interface SystemLog {
   created_at: string;
 }
 
+interface AdminStream {
+  id: string;
+  title: string;
+  mux_live_stream_id: string;
+  playback_id: string;
+  stream_key: string;
+  status: string;
+  muxStatus?: string;
+  rtmpIngestUrl?: string;
+  testToken?: string;
+  created_at: string;
+}
+
 interface AdminDashboardProps {
   currentUser: {
     id: string;
@@ -91,7 +124,7 @@ interface AdminDashboardProps {
   };
 }
 
-type TabType = "overview" | "registrations" | "users" | "logs";
+type TabType = "overview" | "registrations" | "users" | "stream" | "logs";
 
 export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<TabType>("overview");
@@ -119,6 +152,15 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [searchUser, setSearchUser] = useState("");
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
+
+  // Streams Data
+  const [streams, setStreams] = useState<AdminStream[]>([]);
+  const [creatingStream, setCreatingStream] = useState(false);
+  const [newStreamTitle, setNewStreamTitle] = useState("Blue Mind Congress 2027 Main Stage");
+  const [showStreamKey, setShowStreamKey] = useState<Record<string, boolean>>({});
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
+  const [deletingStreamId, setDeletingStreamId] = useState<string | null>(null);
 
   // Logs Data & Filters
   const [logs, setLogs] = useState<SystemLog[]>([]);
@@ -170,6 +212,18 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
     }
   }
 
+  async function fetchStreams() {
+    try {
+      const res = await fetch("/api/admin/stream");
+      if (res.ok) {
+        const data = await res.json();
+        setStreams(data.streams || []);
+      }
+    } catch (err) {
+      console.error("Failed to load streams:", err);
+    }
+  }
+
   async function fetchLogs() {
     try {
       const query = new URLSearchParams();
@@ -189,7 +243,13 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
 
   async function reloadAll() {
     setLoading(true);
-    await Promise.all([fetchOverview(), fetchRegistrations(), fetchUsers(), fetchLogs()]);
+    await Promise.all([
+      fetchOverview(),
+      fetchRegistrations(),
+      fetchUsers(),
+      fetchStreams(),
+      fetchLogs(),
+    ]);
     setLoading(false);
   }
 
@@ -219,7 +279,6 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
         setRegistrations((prev) =>
           prev.map((r) => (r.id === reg.id ? { ...r, status: targetStatus } : r))
         );
-        // Refresh overview and logs to immediately display the new audit trail record
         fetchOverview();
         fetchLogs();
       } else {
@@ -260,6 +319,82 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
     } finally {
       setUpdatingUserId(null);
       setTimeout(() => setActionMessage(null), 4000);
+    }
+  }
+
+  // Create new Mux Live Stream
+  async function handleCreateStream() {
+    setCreatingStream(true);
+    try {
+      const res = await fetch("/api/admin/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: newStreamTitle }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setActionMessage({
+          type: "success",
+          text: "Mux live stream provisioned with signed playback encryption.",
+        });
+        fetchStreams();
+        fetchLogs();
+      } else {
+        setActionMessage({
+          type: "error",
+          text: data.error || "Failed to provision live stream.",
+        });
+      }
+    } catch {
+      setActionMessage({ type: "error", text: "Network error provisioning stream." });
+    } finally {
+      setCreatingStream(false);
+      setTimeout(() => setActionMessage(null), 5000);
+    }
+  }
+
+  // Delete Mux Live Stream
+  async function handleDeleteStream(streamId: string) {
+    if (!confirm("Are you sure you want to terminate this live stream? The stream key will be revoked.")) {
+      return;
+    }
+
+    setDeletingStreamId(streamId);
+    try {
+      const res = await fetch(`/api/admin/stream?streamId=${streamId}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        setActionMessage({
+          type: "success",
+          text: "Live stream and Mux assets deleted successfully.",
+        });
+        setStreams((prev) => prev.filter((s) => s.id !== streamId));
+        fetchLogs();
+      } else {
+        const err = await res.json();
+        setActionMessage({ type: "error", text: err.error || "Failed to delete stream." });
+      }
+    } catch {
+      setActionMessage({ type: "error", text: "Network error deleting stream." });
+    } finally {
+      setDeletingStreamId(null);
+      setTimeout(() => setActionMessage(null), 4000);
+    }
+  }
+
+  // Copy helper
+  function copyToClipboard(text: string, isKey = false) {
+    navigator.clipboard.writeText(text);
+    if (isKey) {
+      setCopiedKey(true);
+      setTimeout(() => setCopiedKey(false), 2000);
+    } else {
+      setCopiedUrl(true);
+      setTimeout(() => setCopiedUrl(false), 2000);
     }
   }
 
@@ -335,6 +470,8 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
       "ADMIN_STATUS_OVERRIDE",
       "ADMIN_REGISTRATION_UPDATE",
       "ADMIN_ROLE_CHANGE",
+      "ADMIN_STREAM_CREATE",
+      "ADMIN_STREAM_DELETE",
       "AUTH_LOGIN",
       "AUTH_REGISTER",
       "PAYMENT_INITIATED",
@@ -365,6 +502,8 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
     });
   }, [logs, filterLogLevel, filterLogEvent, searchLog]);
 
+  const activeStream = streams[0] || null;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       {/* Header Banner */}
@@ -381,7 +520,7 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
             Congress Admin Console
           </h1>
           <p className="text-sm text-deep/60 mt-1">
-            Manage registrations, verify ticket payments, inspect audit logs, and administer role-based access.
+            Manage registrations, stream broadcasts, verify tickets, inspect audit logs, and administer role-based access.
           </p>
         </div>
 
@@ -432,6 +571,7 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
           { id: "overview", label: "Overview & Analytics", icon: TrendingUp },
           { id: "registrations", label: `Registrations (${registrations.length})`, icon: Users },
           { id: "users", label: `User Roles (${users.length})`, icon: UserCheck },
+          { id: "stream", label: `Live Stream (${streams.length})`, icon: Radio },
           { id: "logs", label: `Audit Logs (${logs.length})`, icon: Activity },
         ].map((tab) => {
           const Icon = tab.icon;
@@ -516,7 +656,7 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
             <GlassCard className="p-6">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-deep/60 uppercase tracking-wider">
-                  Accounts & Admins
+                  Accounts &amp; Admins
                 </span>
                 <div className="p-2.5 rounded-xl bg-deep/[0.06] text-deep">
                   <Shield className="h-5 w-5" />
@@ -778,7 +918,7 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
                     Confirm Status Change
                   </h3>
                   <p className="text-xs text-red-600 font-semibold uppercase tracking-wider">
-                    Irreversible Action
+                    ⚠️ Irreversible Action
                   </p>
                 </div>
               </div>
@@ -954,16 +1094,236 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
         </GlassCard>
       )}
 
-      {/* Tab 4: AUDIT LOGS WITH RICH FILTERS */}
+      {/* Tab 4: LIVE STREAM BROADCASTER CONSOLE */}
+      {activeTab === "stream" && (
+        <div className="space-y-8">
+          {/* Stream Status / Creation Card */}
+          <GlassCard className="p-6 md:p-8 space-y-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <Radio className="h-5 w-5 text-teal" />
+                  <h3 className="font-display font-semibold text-xl text-deep">
+                    Mux Live Stream Broadcaster Console
+                  </h3>
+                </div>
+                <p className="text-xs text-deep/60">
+                  Provision live streams with encrypted signed tokens. Broadcast using OBS Studio, vMix, or hardware encoders.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  onClick={fetchStreams}
+                  className="flex items-center gap-1.5 text-xs"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  Refresh Status
+                </Button>
+                {!activeStream && (
+                  <Button
+                    variant="primary"
+                    disabled={creatingStream}
+                    onClick={handleCreateStream}
+                    className="flex items-center gap-2 text-xs px-5 py-2.5"
+                  >
+                    <PlusCircle className="h-4 w-4" />
+                    {creatingStream ? "Provisioning..." : "Provision New Mux Stream"}
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {activeStream ? (
+              <div className="space-y-6 pt-2">
+                {/* Active Stream Overview Bar */}
+                <div className="p-5 rounded-2xl bg-deep/[0.03] border border-deep/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-3">
+                      <span className="text-base font-display font-bold text-deep">
+                        {activeStream.title}
+                      </span>
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold uppercase ${
+                          activeStream.muxStatus === "active"
+                            ? "bg-red-500/15 text-red-600 animate-pulse"
+                            : "bg-amber-500/15 text-amber-800"
+                        }`}
+                      >
+                        <span
+                          className={`h-2 w-2 rounded-full ${
+                            activeStream.muxStatus === "active"
+                              ? "bg-red-600 animate-ping"
+                              : "bg-amber-600"
+                          }`}
+                        />
+                        {activeStream.muxStatus === "active" ? "Broadcasting Live" : "Standby / Idle"}
+                      </span>
+                    </div>
+                    <p className="text-xs font-mono text-deep/60">
+                      Mux Stream ID: {activeStream.mux_live_stream_id} · Playback ID: {activeStream.playback_id}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <a
+                      href="/watch"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 rounded-full border border-deep/20 text-deep text-xs font-semibold hover:bg-deep/5 transition-colors inline-flex items-center gap-1.5"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5 text-teal" />
+                      View Attendee Page (/watch)
+                    </a>
+                    <button
+                      disabled={deletingStreamId === activeStream.id}
+                      onClick={() => handleDeleteStream(activeStream.id)}
+                      className="px-4 py-2 rounded-full bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100 transition-colors inline-flex items-center gap-1.5"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      {deletingStreamId === activeStream.id ? "Terminating..." : "Terminate Stream"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* RTMP Credentials Box */}
+                <div className="grid md:grid-cols-2 gap-4 text-xs">
+                  <div className="p-4 rounded-2xl bg-white border border-deep/15 space-y-2">
+                    <div className="flex items-center justify-between text-deep/60">
+                      <span className="font-semibold uppercase tracking-wider">RTMP Server Ingest URL</span>
+                      <button
+                        onClick={() => copyToClipboard(activeStream.rtmpIngestUrl || "rtmp://global-live.mux.com:5222/app", false)}
+                        className="text-teal hover:underline flex items-center gap-1 font-sans"
+                      >
+                        {copiedUrl ? <Check className="h-3 w-3 text-teal" /> : <Copy className="h-3 w-3" />}
+                        {copiedUrl ? "Copied" : "Copy"}
+                      </button>
+                    </div>
+                    <p className="font-mono text-deep bg-deep/[0.03] p-2.5 rounded-xl break-all">
+                      {activeStream.rtmpIngestUrl || "rtmp://global-live.mux.com:5222/app"}
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-white border border-deep/15 space-y-2">
+                    <div className="flex items-center justify-between text-deep/60">
+                      <span className="font-semibold uppercase tracking-wider">Stream Key (Keep Secret)</span>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() =>
+                            setShowStreamKey((prev) => ({
+                              ...prev,
+                              [activeStream.id]: !prev[activeStream.id],
+                            }))
+                          }
+                          className="text-deep/60 hover:text-deep flex items-center gap-1 font-sans"
+                        >
+                          {showStreamKey[activeStream.id] ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                          {showStreamKey[activeStream.id] ? "Hide" : "Show"}
+                        </button>
+                        <button
+                          onClick={() => copyToClipboard(activeStream.stream_key, true)}
+                          className="text-teal hover:underline flex items-center gap-1 font-sans font-medium"
+                        >
+                          {copiedKey ? <Check className="h-3 w-3 text-teal" /> : <Copy className="h-3 w-3" />}
+                          {copiedKey ? "Copied" : "Copy Key"}
+                        </button>
+                      </div>
+                    </div>
+                    <p className="font-mono text-deep bg-deep/[0.03] p-2.5 rounded-xl break-all">
+                      {showStreamKey[activeStream.id]
+                        ? activeStream.stream_key
+                        : "••••••••••••••••••••••••••••••••••••••••"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Live Admin Video Monitor Preview */}
+                <div className="space-y-3 pt-2">
+                  <h4 className="font-display font-semibold text-base text-deep flex items-center gap-2">
+                    <Video className="h-4 w-4 text-teal" />
+                    Admin Live Monitor (Signed Token Test Player)
+                  </h4>
+                  <div className="max-w-3xl rounded-3xl overflow-hidden shadow-lg border border-deep/15 aspect-video bg-black">
+                    {activeStream.testToken ? (
+                      <MuxPlayer
+                        playbackId={activeStream.playback_id}
+                        tokens={{ playback: activeStream.testToken }}
+                        streamType="live"
+                        autoPlay={false}
+                        accentColor="#3aafa9"
+                        className="w-full h-full"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-paper/70 text-xs">
+                        <Radio className="h-8 w-8 text-teal mb-2" />
+                        Preview player unavailable.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Empty State */
+              <div className="py-12 text-center space-y-4 bg-deep/[0.02] rounded-3xl border border-dashed border-deep/20 p-8">
+                <div className="h-16 w-16 rounded-full bg-teal/15 flex items-center justify-center text-teal mx-auto">
+                  <Radio className="h-8 w-8" />
+                </div>
+                <h4 className="font-display font-semibold text-xl text-deep">
+                  No Active Live Stream Configured
+                </h4>
+                <p className="text-sm text-deep/60 max-w-md mx-auto">
+                  Provision an encrypted Mux live stream with signed playback tokens to begin broadcasting to verified attendees.
+                </p>
+                <div className="pt-2">
+                  <Button
+                    variant="primary"
+                    disabled={creatingStream}
+                    onClick={handleCreateStream}
+                    className="px-6 py-3 text-sm inline-flex items-center gap-2 shadow-sm"
+                  >
+                    <PlusCircle className="h-4 w-4" />
+                    {creatingStream ? "Provisioning Mux Stream..." : "Provision Main Stage Stream"}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </GlassCard>
+
+          {/* Broadcaster Guide */}
+          <GlassCard className="p-6 space-y-4">
+            <h4 className="font-display font-semibold text-lg text-deep flex items-center gap-2">
+              <Info className="h-5 w-5 text-teal" />
+              Broadcaster Setup Guide (OBS Studio / vMix / Hardware)
+            </h4>
+            <div className="grid md:grid-cols-3 gap-4 text-xs text-deep/75">
+              <div className="p-4 bg-deep/[0.02] rounded-2xl space-y-1.5 border border-deep/10">
+                <span className="font-bold text-deep block">1. OBS Stream Settings</span>
+                <p>Go to Settings ➔ Stream ➔ Service: <b>Custom</b>. Paste the RTMP Server URL and your secret Stream Key.</p>
+              </div>
+              <div className="p-4 bg-deep/[0.02] rounded-2xl space-y-1.5 border border-deep/10">
+                <span className="font-bold text-deep block">2. Video &amp; Bitrate</span>
+                <p>Resolution: <b>1080p (1920x1080)</b> or 720p. Video Bitrate: <b>4500 - 6000 Kbps</b>. Audio: 128 - 192 Kbps AAC.</p>
+              </div>
+              <div className="p-4 bg-deep/[0.02] rounded-2xl space-y-1.5 border border-deep/10">
+                <span className="font-bold text-deep block">3. Keyframe Interval</span>
+                <p>Set Keyframe Interval to <b>2 seconds</b> (GOP size = 60 frames at 30fps) for optimal HLS latency.</p>
+              </div>
+            </div>
+          </GlassCard>
+        </div>
+      )}
+
+      {/* Tab 5: AUDIT LOGS WITH RICH FILTERS */}
       {activeTab === "logs" && (
         <GlassCard className="p-6 space-y-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <h3 className="font-display font-semibold text-lg text-deep">
-                System & Payment Audit Logs
+                System &amp; Payment Audit Logs
               </h3>
               <p className="text-xs text-deep/60">
-                Immutable audit trail of authentication attempts, administrative overrides, and payment operations.
+                Immutable audit trail of authentication attempts, administrative overrides, stream events, and payment operations.
               </p>
             </div>
 

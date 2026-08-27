@@ -2,7 +2,7 @@ import { CheckCircle } from "lucide-react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 
-export const metadata = { title: "Payment Confirmed — Blue Mind Congress 2027" };
+export const metadata = { title: "Payment Confirmed" };
 
 export default function PaymentSuccessPage() {
   return (

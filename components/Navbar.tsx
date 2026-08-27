@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, LogOut, CreditCard, LayoutDashboard, Shield } from "lucide-react";
+import { ChevronDown, LogOut, CreditCard, LayoutDashboard, Shield, Radio } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 const NAV_LINKS = [
@@ -161,6 +161,14 @@ export default function Navbar() {
                 </>
               )}
 
+              <Link
+                href="/watch"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 text-sm text-deep/80 hover:bg-teal/[0.06] hover:text-deep transition-colors"
+              >
+                <Radio className="h-4 w-4 text-teal shrink-0" />
+                Live Stream
+              </Link>
               <Link
                 href="/payment"
                 onClick={() => setMenuOpen(false)}

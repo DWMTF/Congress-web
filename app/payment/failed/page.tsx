@@ -2,7 +2,7 @@ import { XCircle } from "lucide-react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 
-export const metadata = { title: "Payment Failed — Blue Mind Congress 2027" };
+export const metadata = { title: "Payment Failed" };
 
 export default function PaymentFailedPage() {
   return (

@@ -4,7 +4,7 @@ import ContactSection from "@/components/Contact/ContactSection";
 import Navbar from "@/components/Navbar";
 
 export const metadata = {
-  title: "Register — Blue Mind Congress 2027",
+  title: "Register",
 };
 
 export default function RegisterPage() {

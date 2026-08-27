@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import LoginForm from "@/components/Auth/LoginForm";
 import Navbar from "@/components/Navbar";
 
-export const metadata = { title: "Sign In — Blue Mind Congress 2027" };
+export const metadata = { title: "Sign In" };
 
 export default function LoginPage() {
   return (

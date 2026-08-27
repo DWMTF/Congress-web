@@ -37,7 +37,7 @@ const SPEAKERS = [
   {
     name: "Dr. Malini Perera",
     title: "Environmental Psychologist",
-    bio: "Focuses on the neuroscience of calm — measuring how natural water sounds regulate the nervous system.",
+    bio: "Focuses on the neuroscience of calm measuring how natural water sounds regulate the nervous system.",
     image:
       "/images/speakers/person2.jpg",
   },

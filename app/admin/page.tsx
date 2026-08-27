@@ -6,7 +6,7 @@ import AdminDashboard from "@/components/Admin/AdminDashboard";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Admin Console — Blue Mind Congress 2027",
+  title: "Admin Console",
   description: "Administrative console for managing registrations, users, and audit logs.",
 };
 

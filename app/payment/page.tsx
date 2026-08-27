@@ -1,4 +1,4 @@
-export const metadata = { title: "Complete Payment — Blue Mind Congress 2027" };
+export const metadata = { title: "Complete Payment" };
 
 import Navbar from "@/components/Navbar";
 import PaymentSection from "@/components/Payment/PaymentSection";
