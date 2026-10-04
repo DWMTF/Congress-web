@@ -229,7 +229,7 @@ export default function WatchPage() {
           </div>
 
           {/* Delegate Q&A Notice */}
-          <GlassCard className="p-6 md:p-8 space-y-3 bg-gradient-to-b from-teal/[0.04] to-deep/[0.02]">
+          {/* <GlassCard className="p-6 md:p-8 space-y-3 bg-gradient-to-b from-teal/[0.04] to-deep/[0.02]">
             <div className="flex items-center gap-2">
               <HelpCircle className="h-5 w-5 text-teal" />
               <h3 className="font-display font-semibold text-base text-deep">
@@ -245,7 +245,7 @@ export default function WatchPage() {
             >
               Submit a Question via Email ➔
             </a>
-          </GlassCard>
+          </GlassCard> */}
         </div>
       </div>
     </main>

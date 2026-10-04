@@ -198,9 +198,9 @@ export default function SponsorshipInquiry() {
                       className="w-full px-4 py-3 bg-white border border-deep/15 rounded-xl text-sm text-deep focus:outline-none focus:border-deep"
                     >
                       <option value="Title / Sovereign Partner">Title / Sovereign Partner (Exclusive)</option>
-                      <option value="Principal / Gold Partner">Principal / Gold Partner ($30k)</option>
-                      <option value="Eco & Innovation Partner">Eco &amp; Innovation Partner ($15k)</option>
-                      <option value="Patron / Community Partner">Patron / Community Partner ($5k)</option>
+                      <option value="Principal / Gold Partner">Principal / Gold Partner</option>
+                      <option value="Eco & Innovation Partner">Eco &amp; Innovation Partner</option>
+                      <option value="Patron / Community Partner">Patron / Community Partner</option>
                       <option value="Custom / In-Kind Partnership">Custom / In-Kind Collaboration</option>
                     </select>
                   </div>

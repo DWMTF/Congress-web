@@ -9,7 +9,7 @@ const TIERS = [
   {
     name: "Patron / Community Partner",
     badge: "Community & Impact",
-    price: "$5,000 USD",
+    price: "25,000 LKR",
     description: "Ideal for organizations committed to grassroots education, environmental stewardship, and academic research.",
     highlight: false,
     icon: Heart,
@@ -24,7 +24,7 @@ const TIERS = [
   {
     name: "Eco & Innovation Partner",
     badge: "Eco Leadership",
-    price: "$15,000 USD",
+    price: "50,000 LKR",
     description: "Tailored for sustainable brands, green technology providers, and eco-hospitality innovators.",
     highlight: false,
     icon: Zap,
@@ -40,7 +40,7 @@ const TIERS = [
   {
     name: "Principal / Gold Partner",
     badge: "Most Popular",
-    price: "$30,000 USD",
+    price: "100,000 LKR",
     description: "High-visibility leadership position for established tourism boards, financial institutions, and global corporations.",
     highlight: true,
     icon: Award,
