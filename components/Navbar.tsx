@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { ChevronDown, LogOut, CreditCard, LayoutDashboard, Shield, Radio } from "lucide-react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { ChevronDown, LogOut, CreditCard, LayoutDashboard, Radio } from "lucide-react";
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 
 const NAV_LINKS = [
@@ -19,21 +20,24 @@ export default function Navbar() {
   const supabase = createClient();
 
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [loadingAuth, setLoadingAuth] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // ── Fetch current role & user info ────────────────────────────
-  async function fetchUserRole() {
+  const fetchUserRole = useCallback(async () => {
     try {
-      const res = await fetch("/api/auth/me");
+      const res = await fetch("/api/auth/me", {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       if (res.ok) {
         const data = await res.json();
         if (data.authenticated && data.user) {
           setUserEmail(data.user.email ?? null);
-          setUserRole(data.role);
-          setIsAdmin(data.isAdmin);
+          setIsAdmin(Boolean(data.isAdmin));
+          setLoadingAuth(false);
           return;
         }
       }
@@ -41,29 +45,50 @@ export default function Navbar() {
       // Fallback to client auth
     }
 
-    const { data } = await supabase.auth.getUser();
-    setUserEmail(data.user?.email ?? null);
-    const metaRole = (data.user?.app_metadata?.role as string) || (data.user?.user_metadata?.role as string);
-    setUserRole(metaRole ?? null);
-    setIsAdmin(metaRole === "admin" || metaRole === "super_admin");
-  }
+    try {
+      const { data } = await supabase.auth.getUser();
+      if (data?.user) {
+        setUserEmail(data.user.email ?? null);
+        const metaRole =
+          (data.user.app_metadata?.role as string) || (data.user.user_metadata?.role as string);
+        setIsAdmin(metaRole === "admin" || metaRole === "super_admin");
+      } else {
+        setUserEmail(null);
+        setIsAdmin(false);
+      }
+    } catch {
+      setUserEmail(null);
+      setIsAdmin(false);
+    } finally {
+      setLoadingAuth(false);
+    }
+  }, [supabase]);
 
   // ── Watch auth state ──────────────────────────────────────────
   useEffect(() => {
     fetchUserRole();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        fetchUserRole();
-      } else {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
+        await fetchUserRole();
+      } else if (event === "SIGNED_OUT") {
         setUserEmail(null);
-        setUserRole(null);
         setIsAdmin(false);
+        setLoadingAuth(false);
+      } else if (session?.user) {
+        setUserEmail(session.user.email ?? null);
+        const metaRole =
+          (session.user.app_metadata?.role as string) ||
+          (session.user.user_metadata?.role as string);
+        setIsAdmin(metaRole === "admin" || metaRole === "super_admin");
+        setLoadingAuth(false);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [fetchUserRole, supabase]);
 
   // ── Close dropdown on outside click ──────────────────────────
   useEffect(() => {
@@ -78,9 +103,13 @@ export default function Navbar() {
 
   async function handleLogout() {
     setMenuOpen(false);
-    await fetch("/api/auth/logout", { method: "POST" });
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      await supabase.auth.signOut();
+    } catch {
+      // ignore
+    }
     setUserEmail(null);
-    setUserRole(null);
     setIsAdmin(false);
     router.push("/");
     router.refresh();
@@ -112,7 +141,9 @@ export default function Navbar() {
       </div>
 
       {/* Auth button */}
-      {!isLoggedIn ? (
+      {loadingAuth ? (
+        <div className="h-9 w-28 animate-pulse rounded-full bg-deep/[0.04]" aria-hidden />
+      ) : !isLoggedIn ? (
         <div className="flex items-center gap-3">
           <Link
             href="/login"
@@ -134,7 +165,7 @@ export default function Navbar() {
             className="flex items-center gap-2 rounded-full bg-deep/[0.06] border border-deep/10 text-sm font-medium text-deep px-4 py-2 hover:bg-deep/10 transition-colors"
           >
             <span className="h-6 w-6 rounded-full bg-teal/20 flex items-center justify-center text-teal text-xs font-bold">
-              {userEmail[0].toUpperCase()}
+              {userEmail ? userEmail[0].toUpperCase() : "U"}
             </span>
             <span className="hidden sm:block max-w-[140px] truncate">{userEmail}</span>
             {isAdmin && (

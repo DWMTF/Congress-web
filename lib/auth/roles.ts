@@ -71,8 +71,9 @@ export async function getCurrentUserWithRole(): Promise<UserWithRole | null> {
       role,
       isAdmin,
     };
-  } catch (err: any) {
-    if (err?.digest === "DYNAMIC_SERVER_USAGE" || err?.message?.includes("Dynamic server usage")) {
+  } catch (err: unknown) {
+    const errorObj = err as { digest?: string; message?: string } | null;
+    if (errorObj?.digest === "DYNAMIC_SERVER_USAGE" || errorObj?.message?.includes("Dynamic server usage")) {
       throw err;
     }
     console.error("[getCurrentUserWithRole] Error fetching current user:", err);
