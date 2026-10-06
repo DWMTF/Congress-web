@@ -3,8 +3,17 @@ import { getCurrentUserWithRole } from "@/lib/auth/roles";
 import { createServiceClient } from "@/lib/supabase/server";
 import { generateMuxPlaybackToken, getMuxLiveStream } from "@/lib/mux/client";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET() {
   const current = await getCurrentUserWithRole();
+
+  const headers = {
+    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+    Pragma: "no-cache",
+    Expires: "0",
+  };
 
   if (!current) {
     return NextResponse.json(
@@ -13,7 +22,7 @@ export async function GET() {
         authorized: false,
         error: "You must be signed in to access the livestream.",
       },
-      { status: 401 }
+      { status: 401, headers }
     );
   }
 

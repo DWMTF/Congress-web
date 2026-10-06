@@ -50,7 +50,10 @@ export default function WatchPage() {
   async function checkStreamAccess() {
     try {
       setRefreshing(true);
-      const res = await fetch("/api/stream/token");
+      const res = await fetch("/api/stream/token", {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
       const data = await res.json();
       setStreamData(data);
     } catch {
@@ -124,6 +127,23 @@ export default function WatchPage() {
                 <Radio className="h-10 w-10 text-teal animate-spin mb-3" />
                 <p className="text-sm font-medium">Verifying ticket credentials...</p>
               </div>
+            ) : streamData?.error && streamData?.authenticated === undefined ? (
+              <GlassCard className="aspect-video flex flex-col items-center justify-center p-8 text-center space-y-4">
+                <div className="h-16 w-16 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+                  <AlertCircle className="h-8 w-8" />
+                </div>
+                <h3 className="font-display font-semibold text-2xl text-deep">
+                  Unable to Load Livestream
+                </h3>
+                <p className="text-sm text-deep/70 max-w-md">
+                  {streamData.error}
+                </p>
+                <div className="pt-2">
+                  <Button onClick={checkStreamAccess} variant="secondary">
+                    Retry
+                  </Button>
+                </div>
+              </GlassCard>
             ) : !streamData?.authenticated ? (
               /* Case 1: Unauthenticated */
               <GlassCard className="aspect-video flex flex-col items-center justify-center p-8 text-center space-y-4">
