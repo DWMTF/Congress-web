@@ -130,9 +130,9 @@ export default function Navbar({ title, logoUrl }: NavbarProps = {}) {
         <Image
           src={logoUrl || "/images/wmtf.png"}
           alt={title || "Blue Mind Congress Logo"}
-          width={40}
-          height={32}
-          className="h-8 md:h-9 w-auto object-contain"
+          width={36}
+          height={36}
+          className="h-9 w-9 object-contain shrink-0"
           priority
         />
         <span className="font-semibold text-deep text-lg tracking-tight">
