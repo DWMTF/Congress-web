@@ -26,6 +26,19 @@ export const sponsorshipPage = defineType({
       initialValue: "Position your brand at the forefront of global neuroscience, sustainable travel, and environmental stewardship in the Kelani River Valley.",
     }),
     defineField({
+      name: "videoFile",
+      title: "Hero Background Video Upload (MP4 / WebM)",
+      type: "file",
+      options: {
+        accept: "video/mp4,video/webm",
+      },
+    }),
+    defineField({
+      name: "videoUrl",
+      title: "Alternative Video URL (Direct MP4 URL)",
+      type: "url",
+    }),
+    defineField({
       name: "partnerButtonText",
       title: "Primary Button Text",
       type: "string",
