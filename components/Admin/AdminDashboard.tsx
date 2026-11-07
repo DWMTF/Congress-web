@@ -92,10 +92,11 @@ interface OverviewMetrics {
 }
 
 interface SystemLog {
-  id: number;
+  id: string | number;
   level: "info" | "warn" | "error";
   event: string;
   message: string;
+  log_source?: "payment" | "system";
   payment_id?: string;
   registration_id?: string;
   metadata?: Record<string, unknown>;
@@ -166,6 +167,7 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
   // Logs Data & Filters
   const [logs, setLogs] = useState<SystemLog[]>([]);
   const [searchLog, setSearchLog] = useState("");
+  const [filterLogSource, setFilterLogSource] = useState<string>("all");
   const [filterLogLevel, setFilterLogLevel] = useState<string>("all");
   const [filterLogEvent, setFilterLogEvent] = useState<string>("all");
   const [selectedLogDetail, setSelectedLogDetail] = useState<SystemLog | null>(null);
@@ -225,9 +227,11 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
     }
   }
 
-  async function fetchLogs() {
+  async function fetchLogs(sourceOverride?: string) {
     try {
+      const activeSource = sourceOverride !== undefined ? sourceOverride : filterLogSource;
       const query = new URLSearchParams();
+      if (activeSource !== "all") query.set("source", activeSource);
       if (filterLogLevel !== "all") query.set("level", filterLogLevel);
       if (filterLogEvent !== "all") query.set("event", filterLogEvent);
       if (searchLog) query.set("search", searchLog);
@@ -486,6 +490,7 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
   // Filtered logs
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
+      const matchSource = filterLogSource === "all" || log.log_source === filterLogSource;
       const matchLevel = filterLogLevel === "all" || log.level === filterLogLevel;
       const matchEvent = filterLogEvent === "all" || log.event === filterLogEvent;
 
@@ -499,9 +504,9 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
         log.payment_id?.toLowerCase().includes(term) ||
         JSON.stringify(log.metadata || {}).toLowerCase().includes(term);
 
-      return matchLevel && matchEvent && matchSearch;
+      return matchSource && matchLevel && matchEvent && matchSearch;
     });
-  }, [logs, filterLogLevel, filterLogEvent, searchLog]);
+  }, [logs, filterLogSource, filterLogLevel, filterLogEvent, searchLog]);
 
   const activeStream = streams[0] || null;
 
@@ -1338,7 +1343,7 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
 
             <Button
               variant="ghost"
-              onClick={fetchLogs}
+              onClick={() => fetchLogs()}
               className="flex items-center gap-2 px-3 py-1.5 text-xs"
             >
               <RefreshCw className="h-3.5 w-3.5" />
@@ -1360,6 +1365,24 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
+              {/* Table Source Filter */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-deep/60 whitespace-nowrap">Source:</span>
+                <select
+                  value={filterLogSource}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFilterLogSource(val);
+                    fetchLogs(val);
+                  }}
+                  className="px-3 py-2 bg-paper rounded-xl border border-deep/15 text-xs text-deep focus:outline-none"
+                >
+                  <option value="all">All Logs (Merged)</option>
+                  <option value="payment">Payments Only (payment_logs)</option>
+                  <option value="system">System & Auth (system_logs)</option>
+                </select>
+              </div>
+
               {/* Event Type Filter */}
               <div className="flex items-center gap-1.5">
                 <span className="text-xs text-deep/60 whitespace-nowrap">Event:</span>
@@ -1400,6 +1423,7 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
               <thead className="bg-deep/[0.03] text-xs uppercase border-b border-deep/10 font-sans font-semibold text-deep/70">
                 <tr>
                   <th className="px-4 py-3">Timestamp</th>
+                  <th className="px-4 py-3">Source</th>
                   <th className="px-4 py-3">Level</th>
                   <th className="px-4 py-3">Event</th>
                   <th className="px-4 py-3">Message</th>
@@ -1410,7 +1434,7 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
               <tbody className="divide-y divide-deep/5 text-xs">
                 {filteredLogs.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-deep/50 font-sans">
+                    <td colSpan={7} className="px-4 py-8 text-center text-deep/50 font-sans">
                       No audit logs match the selected filter criteria.
                     </td>
                   </tr>
@@ -1419,6 +1443,17 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
                     <tr key={log.id} className="hover:bg-deep/[0.015] transition-colors">
                       <td className="px-4 py-3 text-deep/60 whitespace-nowrap">
                         {new Date(log.created_at).toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
+                            log.log_source === "payment"
+                              ? "bg-teal/15 text-teal border border-teal/20"
+                              : "bg-deep/[0.06] text-deep/70 border border-deep/10"
+                          }`}
+                        >
+                          {log.log_source === "payment" ? "Payment" : "System"}
+                        </span>
                       </td>
                       <td className="px-4 py-3">
                         <span
@@ -1471,6 +1506,17 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
                 >
                   {selectedLogDetail.level}
                 </span>
+                {selectedLogDetail.log_source && (
+                  <span
+                    className={`inline-flex px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
+                      selectedLogDetail.log_source === "payment"
+                        ? "bg-teal/15 text-teal border border-teal/20"
+                        : "bg-deep/[0.06] text-deep/70 border border-deep/10"
+                    }`}
+                  >
+                    {selectedLogDetail.log_source === "payment" ? "Table: payment_logs" : "Table: system_logs"}
+                  </span>
+                )}
                 <h3 className="font-mono font-bold text-base text-deep">
                   {selectedLogDetail.event}
                 </h3>
