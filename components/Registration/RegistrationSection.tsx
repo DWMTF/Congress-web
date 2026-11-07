@@ -146,7 +146,7 @@ export default function RegistrationSection() {
   return (
     <section
       id="register"
-      className="relative w-full bg-paper py-20 md:py-28 px-6 overflow-hidden"
+      className="relative w-full bg-paper py-12 md:py-16 px-6 overflow-hidden"
     >
       <div className="absolute inset-0 bg-gradient-to-b from-teal/[0.04] to-transparent pointer-events-none" />
 
@@ -155,7 +155,7 @@ export default function RegistrationSection() {
         title="Reserve your place"
         subtitle="Four short steps. No long forms, no clutter."
         align="center"
-        className="relative mx-auto mb-14"
+        className="relative mx-auto mb-10"
       />
 
       {/* ── Gate + login ───────────────────────────────────────── */}

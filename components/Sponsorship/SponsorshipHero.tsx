@@ -15,7 +15,7 @@ export default function SponsorshipHero({ data, videoSrc }: SponsorshipHeroProps
   const resolvedVideo = data?.videoFileUrl || data?.videoUrl || videoSrc;
 
   return (
-    <header className="relative min-h-[75vh] md:min-h-[85vh] w-full overflow-hidden bg-deep flex items-center justify-center">
+    <header className="relative min-h-[65vh] md:min-h-[75vh] w-full overflow-hidden bg-deep flex items-center justify-center">
       {/* Background media */}
       <div className="absolute inset-0">
         {resolvedVideo && !videoFailed && (
@@ -41,7 +41,7 @@ export default function SponsorshipHero({ data, videoSrc }: SponsorshipHeroProps
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="relative z-20 max-w-4xl mx-auto px-6 py-28 md:py-36 text-center space-y-6"
+        className="relative z-20 max-w-4xl mx-auto px-6 py-20 md:py-24 text-center space-y-6"
       >
         <p className="eyebrow text-teal mb-4">
           {data?.heroEyebrow || "Partnerships & Sponsorship 2027"}

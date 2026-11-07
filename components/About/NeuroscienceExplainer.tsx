@@ -34,13 +34,13 @@ export default function NeuroscienceExplainer({ facts, heading }: NeuroscienceEx
   }
 
   return (
-    <section className="relative w-full bg-paper py-28 md:py-36 px-6">
+    <section className="relative w-full bg-paper py-16 md:py-20 px-6">
       <SectionHeading
         eyebrow={heading?.eyebrow || "The neuroscience"}
         title={heading?.title || "Why water changes the mind."}
         subtitle={heading?.subtitle || "Not a metaphor, a measurable shift in brain and body chemistry."}
         align="center"
-        className="mx-auto mb-16"
+        className="mx-auto mb-10 md:mb-12"
       />
 
       <div className="max-w-5xl mx-auto grid sm:grid-cols-2 lg:grid-cols-4 gap-6">

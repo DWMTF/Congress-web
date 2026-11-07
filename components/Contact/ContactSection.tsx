@@ -34,7 +34,7 @@ export default function ContactSection({ settings, heading }: ContactSectionProp
   ].filter((s) => Boolean(s.url));
 
   return (
-    <section id="contact" className="relative w-full bg-paper pt-28 md:pt-40 px-6">
+    <section id="contact" className="relative w-full bg-paper pt-16 md:pt-20 px-6">
       <SectionHeading
         eyebrow={heading?.eyebrow || "Contact"}
         title={heading?.title || "Let's stay in touch"}
@@ -43,10 +43,10 @@ export default function ContactSection({ settings, heading }: ContactSectionProp
           "Questions about the Congress, the programme, or the valley itself. we're glad to help."
         }
         align="center"
-        className="mx-auto mb-20"
+        className="mx-auto mb-10 md:mb-12"
       />
 
-      <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-6 mb-24">
+      <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-6 mb-14 md:mb-16">
         {/* Contact card */}
         <GlassCard className="p-8 md:p-10">
           <p className="eyebrow text-teal mb-6">Get in touch</p>
@@ -156,7 +156,7 @@ export default function ContactSection({ settings, heading }: ContactSectionProp
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-deep/10 py-10 px-2">
+      <footer className="border-t border-deep/10 py-8 px-2">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-deep/50">
           <p>
             {settings?.footerCopyright ||

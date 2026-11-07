@@ -70,7 +70,7 @@ export default function SponsorshipInquiry({
   }
 
   return (
-    <section id="inquiry" className="relative w-full bg-paper py-28 md:py-36 px-6 border-t border-deep/10">
+    <section id="inquiry" className="relative w-full bg-paper py-16 md:py-20 px-6 border-t border-deep/10">
       <div className="max-w-5xl mx-auto">
         <SectionHeading
           eyebrow={pageData?.inquiryEyebrow || "Direct Contacts"}
@@ -80,7 +80,7 @@ export default function SponsorshipInquiry({
             "Speak directly with our partnership director or send a brief inquiry to receive the comprehensive 2027 Sponsorship Prospectus."
           }
           align="center"
-          className="mx-auto mb-20"
+          className="mx-auto mb-12 md:mb-14"
         />
 
         <div className="grid md:grid-cols-12 gap-8 items-start">

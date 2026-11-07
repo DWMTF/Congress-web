@@ -143,9 +143,9 @@ export default function TimelineSection({ events, heading }: TimelineSectionProp
   }
 
   return (
-    <section ref={containerRef} className="py-24">
+    <section ref={containerRef} className="py-16 md:py-20 px-6">
       {/* Section heading */}
-      <div className="max-w-4xl mx-auto mb-24">
+      <div className="max-w-4xl mx-auto mb-12 md:mb-16">
         <p className="eyebrow text-teal mb-4">
           {heading?.eyebrow || "The road to the river"}
         </p>

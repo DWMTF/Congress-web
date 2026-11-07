@@ -35,7 +35,7 @@ export default function WhatYouGet({ tiers, heading }: WhatYouGetProps) {
   }
 
   return (
-    <section id="tiers" className="relative w-full bg-paper py-28 md:py-36 px-6 border-t border-deep/10">
+    <section id="tiers" className="relative w-full bg-paper py-16 md:py-20 px-6 border-t border-deep/10">
       <div className="max-w-6xl mx-auto">
         <SectionHeading
           eyebrow={heading?.eyebrow || "Deliverables & Tiers"}
@@ -45,7 +45,7 @@ export default function WhatYouGet({ tiers, heading }: WhatYouGetProps) {
             "Meaningful ROI through global brand prestige, executive networking, and verified sustainability impact."
           }
           align="center"
-          className="mx-auto mb-20"
+          className="mx-auto mb-12 md:mb-14"
         />
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
