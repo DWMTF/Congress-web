@@ -14,6 +14,21 @@ export const siteSettings = defineType({
       validation: (rule) => rule.required(),
     }),
     defineField({
+      name: "logo",
+      title: "Site Logo (Navbar)",
+      type: "image",
+      description: "Primary brand logo displayed in the website header/navbar navigation.",
+      options: {
+        hotspot: true,
+      },
+    }),
+    defineField({
+      name: "favicon",
+      title: "Browser Favicon",
+      type: "image",
+      description: "Website favicon displayed in browser tabs (.ico or .png).",
+    }),
+    defineField({
       name: "organizationName",
       title: "Organization Name",
       type: "string",

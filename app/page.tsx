@@ -49,7 +49,7 @@ export default async function Home() {
 
   return (
     <main className="bg-paper">
-      <Navbar title={settingsData?.title} />
+      <Navbar title={settingsData?.title} logoUrl={settingsData?.logoUrl} />
       <Hero data={heroData} />
       <AboutSection facts={factsData} stages={stagesData} pageData={pageData} />
       <TimelineSection

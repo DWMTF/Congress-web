@@ -90,6 +90,10 @@ export interface NeuroscienceFactData {
 
 export interface SiteSettingsData {
   title?: string;
+  logo?: Image;
+  logoUrl?: string;
+  favicon?: Image;
+  faviconUrl?: string;
   organizationName?: string;
   footerCopyright?: string;
   instagramUrl?: string;
@@ -251,6 +255,10 @@ export const FACTS_QUERY = `*[_type == "neuroscienceFact"] | order(order asc) {
 
 export const SITE_SETTINGS_QUERY = `*[_type == "siteSettings"][0]{
   title,
+  logo,
+  "logoUrl": logo.asset->url,
+  favicon,
+  "faviconUrl": favicon.asset->url,
   organizationName,
   footerCopyright,
   instagramUrl,

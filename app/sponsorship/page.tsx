@@ -34,7 +34,7 @@ export default async function SponsorshipPage() {
 
   return (
     <main className="bg-paper min-h-screen">
-      <Navbar title={settings?.title} />
+      <Navbar title={settings?.title} logoUrl={settings?.logoUrl} />
       <SponsorshipHero data={pageData} />
       <WhatIsCongress pageData={pageData} pillars={pillars} />
       <WhatYouGet

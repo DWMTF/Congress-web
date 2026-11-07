@@ -28,7 +28,7 @@ export default async function PressPage() {
 
   return (
     <main className="bg-paper">
-      <Navbar title={settings?.title} />
+      <Navbar title={settings?.title} logoUrl={settings?.logoUrl} />
       <PressHero data={pressPageData} />
       <DownloadCards assets={assets} />
       <MediaContactCard settings={settings} />

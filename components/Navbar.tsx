@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -14,7 +15,12 @@ const NAV_LINKS = [
   { label: "Contact", href: "#contact" },
 ];
 
-export default function Navbar({ title }: { title?: string } = {}) {
+interface NavbarProps {
+  title?: string;
+  logoUrl?: string;
+}
+
+export default function Navbar({ title, logoUrl }: NavbarProps = {}) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -121,7 +127,14 @@ export default function Navbar({ title }: { title?: string } = {}) {
     <nav className="relative z-50 flex items-center justify-between px-6 md:px-10 py-5 bg-paper">
       {/* Logo */}
       <Link href="/" className="flex items-center gap-3">
-        <span className="h-8 w-8 rounded-full bg-deep" aria-hidden />
+        <Image
+          src={logoUrl || "/images/wmtf.png"}
+          alt={title || "Blue Mind Congress Logo"}
+          width={40}
+          height={32}
+          className="h-8 md:h-9 w-auto object-contain"
+          priority
+        />
         <span className="font-semibold text-deep text-lg tracking-tight">
           {title || "Blue Mind Congress"}
         </span>
