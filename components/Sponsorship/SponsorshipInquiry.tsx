@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, Phone, MapPin, Send, CheckCircle2, FileDown, AlertCircle } from "lucide-react";
+import { Mail, Phone, MapPin, ArrowRight, CheckCircle2, FileDown, AlertCircle } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import { TextInput } from "@/components/ui/FormField";
+import { TextInput, TextArea, Select } from "@/components/ui/FormField";
 import { Button } from "@/components/ui/Button";
 import type { SiteSettingsData, SponsorshipPageData, SponsorshipTierData } from "@/sanity/lib/queries";
 
@@ -70,8 +70,8 @@ export default function SponsorshipInquiry({
   }
 
   return (
-    <section id="inquiry" className="w-full bg-paper py-16 md:py-24 px-6 border-t border-deep/10">
-      <div className="max-w-6xl mx-auto space-y-16">
+    <section id="inquiry" className="relative w-full bg-paper py-28 md:py-36 px-6 border-t border-deep/10">
+      <div className="max-w-5xl mx-auto">
         <SectionHeading
           eyebrow={pageData?.inquiryEyebrow || "Direct Contacts"}
           title={pageData?.inquiryTitle || "Let’s Create an Impactful Partnership"}
@@ -80,134 +80,120 @@ export default function SponsorshipInquiry({
             "Speak directly with our partnership director or send a brief inquiry to receive the comprehensive 2027 Sponsorship Prospectus."
           }
           align="center"
-          className="mx-auto"
+          className="mx-auto mb-20"
         />
 
-        <div className="grid lg:grid-cols-5 gap-8 items-start">
-          {/* Direct Contacts Card (2 cols) */}
-          <GlassCard className="lg:col-span-2 p-8 md:p-10 space-y-8 bg-gradient-to-b from-white to-deep/[0.02]">
+        <div className="grid md:grid-cols-12 gap-8 items-start">
+          {/* Direct Contacts Card (5 cols) */}
+          <GlassCard className="md:col-span-5 p-8 md:p-10 flex flex-col justify-between h-full">
             <div>
-              <p className="eyebrow text-teal mb-2">
+              <p className="eyebrow text-teal mb-3">
                 {settings?.partnershipsOfficeTitle || "Partnerships Office"}
               </p>
-              <h3 className="font-display font-semibold text-2xl text-deep">
+              <h3 className="font-display font-semibold text-2xl text-deep mb-3">
                 {settings?.partnershipsOfficeSubtitle || "Get in Touch"}
               </h3>
-              <p className="text-sm text-deep/60 mt-2">
+              <p className="text-sm text-deep/65 leading-relaxed mb-8">
                 Our team is available for tailored proposals, co-curation calls, and private briefing decks.
               </p>
-            </div>
 
-            <div className="space-y-6 text-sm">
-              {settings?.partnershipsEmail && (
-                <div className="flex items-start gap-4">
-                  <div className="p-2.5 rounded-xl bg-teal/15 text-teal shrink-0 mt-0.5">
-                    <Mail className="h-5 w-5" />
-                  </div>
+              <dl className="space-y-6">
+                {settings?.partnershipsEmail && (
                   <div>
-                    <span className="text-xs text-deep/50 uppercase tracking-wider font-semibold block mb-0.5">
-                      Partnerships Email
-                    </span>
-                    <a
-                      href={`mailto:${settings.partnershipsEmail}`}
-                      className="text-deep font-medium hover:text-teal transition-colors"
-                    >
-                      {settings.partnershipsEmail}
-                    </a>
+                    <dt className="text-sm text-deep/55 mb-1">Partnerships Email</dt>
+                    <dd className="text-deep font-medium">
+                      <a
+                        href={`mailto:${settings.partnershipsEmail}`}
+                        className="hover:underline hover:text-teal transition-colors"
+                      >
+                        {settings.partnershipsEmail}
+                      </a>
+                    </dd>
                   </div>
-                </div>
-              )}
+                )}
 
-              {settings?.partnershipsPhone && (
-                <div className="flex items-start gap-4">
-                  <div className="p-2.5 rounded-xl bg-teal/15 text-teal shrink-0 mt-0.5">
-                    <Phone className="h-5 w-5" />
-                  </div>
+                {settings?.partnershipsPhone && (
                   <div>
-                    <span className="text-xs text-deep/50 uppercase tracking-wider font-semibold block mb-0.5">
-                      Direct Telephone / WhatsApp
-                    </span>
-                    <a
-                      href={`tel:${settings.partnershipsPhone}`}
-                      className="text-deep font-medium hover:text-teal transition-colors"
-                    >
-                      {settings.partnershipsPhone}
-                    </a>
-                    {settings.partnershipsHours && (
-                      <p className="text-xs text-deep/50 mt-0.5">{settings.partnershipsHours}</p>
+                    <dt className="text-sm text-deep/55 mb-1">Direct Telephone / WhatsApp</dt>
+                    <dd className="text-deep font-medium">
+                      <a
+                        href={`tel:${settings.partnershipsPhone}`}
+                        className="hover:underline hover:text-teal transition-colors"
+                      >
+                        {settings.partnershipsPhone}
+                      </a>
+                    </dd>
+                    {settings?.partnershipsHours && (
+                      <p className="text-xs text-deep/50 mt-1">{settings.partnershipsHours}</p>
                     )}
                   </div>
-                </div>
-              )}
+                )}
 
-              {settings?.contactAddress && (
-                <div className="flex items-start gap-4">
-                  <div className="p-2.5 rounded-xl bg-teal/15 text-teal shrink-0 mt-0.5">
-                    <MapPin className="h-5 w-5" />
-                  </div>
+                {settings?.contactAddress && (
                   <div>
-                    <span className="text-xs text-deep/50 uppercase tracking-wider font-semibold block mb-0.5">
-                      Foundation Headquarters
-                    </span>
-                    <p className="text-deep font-medium leading-snug whitespace-pre-line">
+                    <dt className="text-sm text-deep/55 mb-1">Headquarters</dt>
+                    <dd className="text-deep font-medium whitespace-pre-line leading-relaxed">
                       {settings.contactAddress}
-                    </p>
+                    </dd>
                   </div>
-                </div>
-              )}
+                )}
+              </dl>
             </div>
 
             {prospectusUrl && (
-              <div className="pt-4 border-t border-deep/10">
+              <div className="pt-8 mt-8 border-t border-deep/10">
                 <a
                   href={prospectusUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-full border border-deep/15 text-deep text-xs font-semibold hover:bg-deep/5 transition-colors"
+                  className="inline-flex w-full items-center justify-center gap-2 px-6 py-3.5 rounded-full border border-deep/15 text-deep text-sm font-medium hover:bg-deep/5 transition-colors"
                 >
                   <FileDown className="h-4 w-4 text-teal" />
-                  {settings?.prospectusButtonLabel || "Download Congress Prospectus (PDF)"}
+                  <span>{settings?.prospectusButtonLabel || "Download Congress Prospectus (PDF)"}</span>
                 </a>
               </div>
             )}
           </GlassCard>
 
-          {/* Interactive Inquiry Form (3 cols) */}
-          <GlassCard className="lg:col-span-3 p-8 md:p-10">
+          {/* Interactive Inquiry Form (7 cols) */}
+          <GlassCard className="md:col-span-7 p-8 md:p-10">
             {submitted ? (
-              <div className="py-16 text-center space-y-4">
-                <div className="h-16 w-16 bg-teal/20 text-teal rounded-full flex items-center justify-center mx-auto">
-                  <CheckCircle2 className="h-8 w-8" />
-                </div>
+              <div className="py-16 text-center space-y-5">
+                <span className="flex h-16 w-16 mx-auto items-center justify-center rounded-full bg-teal/10 text-teal">
+                  <CheckCircle2 className="h-8 w-8 stroke-[1.75]" />
+                </span>
                 <h3 className="font-display font-semibold text-2xl text-deep">
                   {pageData?.inquirySuccessTitle || "Inquiry Received"}
                 </h3>
-                <p className="text-sm text-deep/70 max-w-md mx-auto">
+                <p className="text-sm text-deep/65 max-w-md mx-auto leading-relaxed">
                   {pageData?.inquirySuccessMessage ||
                     "Thank you for reaching out. Our Partnership Director will connect with you within 24 business hours with the full deck and scheduling details."}
                 </p>
-                <Button
-                  variant="ghost"
-                  onClick={() => setSubmitted(false)}
-                  className="text-xs mt-4"
-                >
-                  Send another inquiry
-                </Button>
+                <div className="pt-4">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setSubmitted(false)}
+                    className="text-xs"
+                  >
+                    Send another inquiry
+                  </Button>
+                </div>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-5" noValidate>
                 <div>
-                  <h3 className="font-display font-semibold text-xl text-deep mb-1">
-                    {pageData?.inquiryFormTitle || "Partnership Inquiry Form"}
+                  <p className="eyebrow text-teal mb-2">Inquiry Form</p>
+                  <h3 className="font-display font-semibold text-2xl text-deep mb-1">
+                    {pageData?.inquiryFormTitle || "Partnership Inquiry"}
                   </h3>
-                  <p className="text-xs text-deep/60">
+                  <p className="text-sm text-deep/65">
                     {pageData?.inquiryFormSubtitle ||
                       "Tell us about your brand and the scope of partnership you are exploring."}
                   </p>
                 </div>
 
                 {errorMessage && (
-                  <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2.5">
+                  <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-sm text-red-700 flex items-start gap-3">
                     <AlertCircle className="h-4 w-4 shrink-0 text-red-600 mt-0.5" />
                     <span>{errorMessage}</span>
                   </div>
@@ -215,7 +201,7 @@ export default function SponsorshipInquiry({
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-deep/70 uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-medium text-deep/60 mb-2">
                       Your Name
                     </label>
                     <TextInput
@@ -226,7 +212,7 @@ export default function SponsorshipInquiry({
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-deep/70 uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-medium text-deep/60 mb-2">
                       Business Email
                     </label>
                     <TextInput
@@ -241,7 +227,7 @@ export default function SponsorshipInquiry({
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-deep/70 uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-medium text-deep/60 mb-2">
                       Organization / Company
                     </label>
                     <TextInput
@@ -253,13 +239,12 @@ export default function SponsorshipInquiry({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-deep/70 uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-medium text-deep/60 mb-2">
                       Interested Tier
                     </label>
-                    <select
+                    <Select
                       value={formData.tier}
                       onChange={(e) => setFormData({ ...formData, tier: e.target.value })}
-                      className="w-full px-4 py-3 bg-white border border-deep/15 rounded-xl text-sm text-deep focus:outline-none focus:border-deep"
                     >
                       {tiers && tiers.length > 0 ? (
                         <>
@@ -281,31 +266,30 @@ export default function SponsorshipInquiry({
                           <option value="Custom / In-Kind Collaboration">Custom / In-Kind Collaboration</option>
                         </>
                       )}
-                    </select>
+                    </Select>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-deep/70 uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-medium text-deep/60 mb-2">
                     Partnership Objectives &amp; Notes
                   </label>
-                  <textarea
+                  <TextArea
                     rows={4}
                     required
                     placeholder="Describe your organization's goals, CSR priorities, or specific activations you would like to explore..."
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    className="w-full px-4 py-3 bg-white border border-deep/15 rounded-xl text-sm text-deep focus:outline-none focus:border-deep resize-none"
                   />
                 </div>
 
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 bg-deep text-paper hover:bg-deep/90 flex items-center justify-center gap-2"
+                  className="w-full py-4 text-sm font-medium gap-2"
                 >
-                  <Send className="h-4 w-4" />
-                  {loading ? "Transmitting Inquiry..." : "Submit Sponsorship Inquiry"}
+                  <span>{loading ? "Transmitting Inquiry…" : "Submit Sponsorship Inquiry"}</span>
+                  <ArrowRight className="h-4 w-4" />
                 </Button>
               </form>
             )}

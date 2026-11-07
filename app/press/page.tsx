@@ -1,6 +1,5 @@
 import PressHero from "@/components/Press/PressHero";
 import DownloadCards from "@/components/Press/DownloadCards";
-import MediaContactCard from "@/components/Press/MediaContactCard";
 import ContactSection from "@/components/Contact/ContactSection";
 import Navbar from "@/components/Navbar";
 import { safeSanityFetch } from "@/sanity/lib/client";
@@ -31,7 +30,6 @@ export default async function PressPage() {
       <Navbar title={settings?.title} logoUrl={settings?.logoUrl} />
       <PressHero data={pressPageData} />
       <DownloadCards assets={assets} />
-      <MediaContactCard settings={settings} />
       <ContactSection settings={settings} />
     </main>
   );

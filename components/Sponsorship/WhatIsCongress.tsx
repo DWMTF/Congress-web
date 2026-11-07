@@ -25,8 +25,8 @@ export default function WhatIsCongress({ pageData, pillars }: WhatIsCongressProp
   const validPillars = pillars?.filter((p) => p.title) || [];
 
   return (
-    <section className="w-full bg-paper py-16 md:py-24 px-6 border-t border-deep/10">
-      <div className="max-w-6xl mx-auto space-y-16">
+    <section className="relative w-full bg-paper py-28 md:py-36 px-6 border-t border-deep/10">
+      <div className="max-w-6xl mx-auto space-y-20">
         <SectionHeading
           eyebrow={pageData?.whatIsCongressEyebrow || "The Congress Explained"}
           title={pageData?.whatIsCongressTitle || "What is Blue Mind Congress 2027?"}
@@ -35,7 +35,7 @@ export default function WhatIsCongress({ pageData, pillars }: WhatIsCongressProp
             "A landmark international summit exploring how water, nature, and neuroscience can reshape global tourism, mental health, and ecological conservation."
           }
           align="center"
-          className="mx-auto"
+          className="mx-auto mb-20"
         />
 
         {/* Narrative Box */}
