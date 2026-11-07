@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Waves, Radio, AlertCircle, LogIn, UserPlus, Eye, EyeOff } from "lucide-react";
+import { Check, Waves, Radio, AlertCircle, LogIn, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import StepProgress from "./StepProgress";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { TextInput } from "@/components/ui/FormField";
+import { TextInput, PasswordInput } from "@/components/ui/FormField";
 import { Button } from "@/components/ui/Button";
 import { TICKET_PRICES } from "@/lib/payment/prices";
 
@@ -32,41 +32,6 @@ const slideVariants = {
 
 function formatLKR(amount: number) {
   return `LKR ${amount.toLocaleString("en-LK")}`;
-}
-
-/** Password field with eye toggle */
-function PasswordInput({
-  value,
-  onChange,
-  placeholder,
-  autoComplete,
-}: {
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  placeholder: string;
-  autoComplete?: string;
-}) {
-  const [visible, setVisible] = useState(false);
-  return (
-    <div className="relative">
-      <TextInput
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        type={visible ? "text" : "password"}
-        autoComplete={autoComplete}
-        className="pr-11"
-      />
-      <button
-        type="button"
-        onClick={() => setVisible((v) => !v)}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-deep/35 hover:text-deep/70 transition-colors"
-        aria-label={visible ? "Hide password" : "Show password"}
-      >
-        {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-      </button>
-    </div>
-  );
 }
 
 export default function RegistrationSection() {

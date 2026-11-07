@@ -3,47 +3,19 @@
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import useEmblaCarousel from "embla-carousel-react";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, User } from "lucide-react";
+import type { SpeakerData } from "@/sanity/lib/queries";
+import { urlForImage } from "@/sanity/lib/image";
 
-const SPEAKERS = [
-  {
-    name: "Dr. Amara Wickramasinghe",
-    title: "Marine Cognitive Scientist",
-    bio: "Studies how proximity to moving water shifts attention and stress markers in urban populations.",
-    image:
-      "/images/speakers/person2.jpg",
-  },
-  {
-    name: "Ravindu Fernando",
-    title: "River Conservation Lead",
-    bio: "Leads community-based river restoration across the Kelani basin, bridging policy and grassroots action.",
-    image:
-      "/images/speakers/person1.jpg",
-  },
-  {
-    name: "Dr. Priya Nadarajah",
-    title: "Public Health Researcher",
-    bio: "Publishes on blue-space access as a determinant of mental health outcomes in South Asian cities.",
-    image:
-      "/images/speakers/person2.jpg",
-  },
-  {
-    name: "Kasun Jayasuriya",
-    title: "Adventure Tourism Director",
-    bio: "Designs immersive rafting and mountain programmes that translate research into lived experience.",
-    image:
-      "/images/speakers/person1.jpg",
-  },
-  {
-    name: "Dr. Malini Perera",
-    title: "Environmental Psychologist",
-    bio: "Focuses on the neuroscience of calm measuring how natural water sounds regulate the nervous system.",
-    image:
-      "/images/speakers/person2.jpg",
-  },
-];
+interface SpeakerCarouselProps {
+  speakers?: SpeakerData[] | null;
+  heading?: {
+    eyebrow?: string;
+    title?: string;
+  };
+}
 
-export default function SpeakerCarousel() {
+export default function SpeakerCarousel({ speakers, heading }: SpeakerCarouselProps) {
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: false,
     align: "start",
@@ -63,29 +35,38 @@ export default function SpeakerCarousel() {
 
   useEffect(() => {
     if (!emblaApi) return;
-    // Register listeners first, then schedule an initial sync on the next frame
-    // to avoid calling setState synchronously within the effect body.
     emblaApi.on("select", onSelect).on("reInit", onSelect);
     const raf = requestAnimationFrame(() => onSelect());
 
     return () => {
       cancelAnimationFrame(raf);
-      // detach listeners
       try {
         emblaApi.off("select", onSelect).off("reInit", onSelect);
-      } catch (e) {
-        /* ignore if off is not available */
+      } catch {
+        // detach listener safe
       }
     };
   }, [emblaApi, onSelect]);
+
+  if (!speakers || speakers.length === 0) {
+    return null;
+  }
+
+  const validSpeakers = speakers.filter((s) => s.name);
+
+  if (validSpeakers.length === 0) {
+    return null;
+  }
 
   return (
     <div>
       <div className="flex items-end justify-between mb-8">
         <div>
-          <p className="eyebrow text-teal mb-3">Speaking at the Congress</p>
+          <p className="eyebrow text-teal mb-3">
+            {heading?.eyebrow || "Speaking at the Congress"}
+          </p>
           <h3 className="font-display font-semibold text-display-md text-deep">
-            Voices of the valley
+            {heading?.title || "Voices of the valley"}
           </h3>
         </div>
 
@@ -111,40 +92,59 @@ export default function SpeakerCarousel() {
 
       <div className="overflow-hidden" ref={emblaRef}>
         <div className="flex gap-6 -ml-6 pl-6">
-          {SPEAKERS.map((speaker) => (
-            <div
-              key={speaker.name}
-              className="flex-shrink-0 w-[78%] sm:w-[46%] lg:w-[30%]"
-            >
-              <div className="relative aspect-[4/5] w-full rounded-3xl overflow-hidden mb-5">
-                <Image
-                  src={speaker.image}
-                  alt={speaker.name}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 78vw, 30vw"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-deep/60 via-transparent to-transparent" />
+          {validSpeakers.map((speaker) => {
+            const imageUrl = speaker.image ? urlForImage(speaker.image)?.url() : null;
+
+            return (
+              <div
+                key={speaker._id || speaker.name}
+                className="flex-shrink-0 w-[78%] sm:w-[46%] lg:w-[30%]"
+              >
+                <div className="relative aspect-[4/5] w-full rounded-3xl overflow-hidden mb-5 bg-deep/5 flex items-center justify-center">
+                  {imageUrl ? (
+                    <>
+                      <Image
+                        src={imageUrl}
+                        alt={speaker.name}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 78vw, 30vw"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-deep/60 via-transparent to-transparent" />
+                    </>
+                  ) : (
+                    <User className="h-16 w-16 text-deep/20" />
+                  )}
+                </div>
+                <h5 className="font-display font-semibold text-lg text-deep">
+                  {speaker.name}
+                </h5>
+                {speaker.title && (
+                  <p className="text-teal text-sm font-medium mb-2">
+                    {speaker.title}
+                  </p>
+                )}
+                {speaker.bio && (
+                  <p className="text-deep/65 text-sm leading-relaxed">
+                    {speaker.bio}
+                  </p>
+                )}
               </div>
-              <h5 className="font-display font-semibold text-lg text-deep">
-                {speaker.name}
-              </h5>
-              <p className="text-teal text-sm font-medium mb-2">{speaker.title}</p>
-              <p className="text-deep/65 text-sm leading-relaxed">{speaker.bio}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
       {/* Minimal progress dots */}
       <div className="mt-8 flex items-center gap-2">
-        {SPEAKERS.map((_, i) => (
+        {validSpeakers.map((_, i) => (
           <button
             key={i}
             aria-label={`Go to speaker ${i + 1}`}
             onClick={() => emblaApi?.scrollTo(i)}
-            className={`h-1.5 rounded-full transition-all duration-300 ${i === selected ? "w-8 bg-teal" : "w-1.5 bg-deep/15"
-              }`}
+            className={`h-1.5 rounded-full transition-all duration-300 ${
+              i === selected ? "w-8 bg-teal" : "w-1.5 bg-deep/15"
+            }`}
           />
         ))}
       </div>

@@ -5,8 +5,18 @@ import { Instagram, Facebook, Linkedin, Twitter, ArrowRight } from "lucide-react
 import { GlassCard } from "@/components/ui/GlassCard";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { TextInput } from "@/components/ui/FormField";
+import type { SiteSettingsData } from "@/sanity/lib/queries";
 
-export default function ContactSection() {
+interface ContactSectionProps {
+  settings?: SiteSettingsData | null;
+  heading?: {
+    eyebrow?: string;
+    title?: string;
+    subtitle?: string;
+  };
+}
+
+export default function ContactSection({ settings, heading }: ContactSectionProps) {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
 
@@ -16,12 +26,22 @@ export default function ContactSection() {
     setSubscribed(true);
   };
 
+  const socialLinks = [
+    { icon: Instagram, url: settings?.instagramUrl, label: "Instagram" },
+    { icon: Facebook, url: settings?.facebookUrl, label: "Facebook" },
+    { icon: Twitter, url: settings?.twitterUrl, label: "X (Twitter)" },
+    { icon: Linkedin, url: settings?.linkedinUrl, label: "LinkedIn" },
+  ].filter((s) => Boolean(s.url));
+
   return (
     <section id="contact" className="relative w-full bg-paper pt-28 md:pt-40 px-6">
       <SectionHeading
-        eyebrow="Contact"
-        title="Let's stay in touch"
-        subtitle="Questions about the Congress, the programme, or the valley itself. we're glad to help."
+        eyebrow={heading?.eyebrow || "Contact"}
+        title={heading?.title || "Let's stay in touch"}
+        subtitle={
+          heading?.subtitle ||
+          "Questions about the Congress, the programme, or the valley itself. we're glad to help."
+        }
         align="center"
         className="mx-auto mb-20"
       />
@@ -31,50 +51,74 @@ export default function ContactSection() {
         <GlassCard className="p-8 md:p-10">
           <p className="eyebrow text-teal mb-6">Get in touch</p>
           <dl className="space-y-5">
-            <div>
-              <dt className="text-sm text-deep/55 mb-1">Email</dt>
-              <dd className="text-deep font-medium">hello@bluemindcongress.org</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-deep/55 mb-1">Phone</dt>
-              <dd className="text-deep font-medium">+94 11 234 5678</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-deep/55 mb-1">Address</dt>
-              <dd className="text-deep font-medium">
-                Water &amp; Mountain Tourism Foundation
-                <br />
-                Kelani River Valley, Sri Lanka
-              </dd>
-            </div>
+            {settings?.contactEmail && (
+              <div>
+                <dt className="text-sm text-deep/55 mb-1">Email</dt>
+                <dd className="text-deep font-medium">
+                  <a
+                    href={`mailto:${settings.contactEmail}`}
+                    className="hover:underline hover:text-teal transition-colors"
+                  >
+                    {settings.contactEmail}
+                  </a>
+                </dd>
+              </div>
+            )}
+            {settings?.contactPhone && (
+              <div>
+                <dt className="text-sm text-deep/55 mb-1">Phone</dt>
+                <dd className="text-deep font-medium">
+                  <a
+                    href={`tel:${settings.contactPhone}`}
+                    className="hover:underline hover:text-teal transition-colors"
+                  >
+                    {settings.contactPhone}
+                  </a>
+                </dd>
+              </div>
+            )}
+            {settings?.contactAddress && (
+              <div>
+                <dt className="text-sm text-deep/55 mb-1">Address</dt>
+                <dd className="text-deep font-medium whitespace-pre-line">
+                  {settings.contactAddress}
+                </dd>
+              </div>
+            )}
           </dl>
 
-          <div className="flex items-center gap-3 mt-8">
-            {[Instagram, Facebook, Twitter, Linkedin].map((Icon, i) => (
-              <a
-                key={i}
-                href="#"
-                aria-label="Social link"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-deep/15 text-deep/70 hover:text-teal hover:border-teal/40 transition-colors"
-              >
-                <Icon className="h-4 w-4" />
-              </a>
-            ))}
-          </div>
+          {socialLinks.length > 0 && (
+            <div className="flex items-center gap-3 mt-8">
+              {socialLinks.map(({ icon: Icon, url, label }) => (
+                <a
+                  key={label}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  className="flex h-10 w-10 items-center justify-center rounded-full border border-deep/15 text-deep/70 hover:text-teal hover:border-teal/40 transition-colors"
+                >
+                  <Icon className="h-4 w-4" />
+                </a>
+              ))}
+            </div>
+          )}
         </GlassCard>
 
         {/* Newsletter + map */}
         <div className="flex flex-col gap-6">
           <GlassCard className="p-8 md:p-10">
-            <p className="eyebrow text-teal mb-4">Newsletter</p>
+            <p className="eyebrow text-teal mb-4">
+              {settings?.newsletterEyebrow || "Newsletter"}
+            </p>
             <p className="text-deep/65 mb-6">
-              One email a month. Programme updates, speaker announcements, no
-              noise.
+              {settings?.newsletterDescription ||
+                "One email a month. Programme updates, speaker announcements, no noise."}
             </p>
 
             {subscribed ? (
               <p className="text-deep font-medium">
-                You&apos;re on the list! Thank you.
+                {settings?.newsletterSuccessMessage || "You're on the list! Thank you."}
               </p>
             ) : (
               <form onSubmit={handleSubmit} className="flex gap-3">
@@ -103,7 +147,9 @@ export default function ContactSection() {
               className="w-full h-full grayscale-[20%] opacity-90"
               style={{ minHeight: 180 }}
               loading="lazy"
-              src="https://maps.google.com/maps?q=Kelani%20River%20Valley%2C%20Sri%20Lanka&t=&z=9&ie=UTF8&iwloc=&output=embed"
+              src={`https://maps.google.com/maps?q=${encodeURIComponent(
+                settings?.mapLocationQuery || "Kelani River Valley, Sri Lanka"
+              )}&t=&z=9&ie=UTF8&iwloc=&output=embed`}
             />
           </div>
         </div>
@@ -113,8 +159,8 @@ export default function ContactSection() {
       <footer className="border-t border-deep/10 py-10 px-2">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-deep/50">
           <p>
-            © 2027 Water &amp; Mountain Tourism Foundation. All
-            rights reserved.
+            {settings?.footerCopyright ||
+              "© 2027 Water & Mountain Tourism Foundation. All rights reserved."}
           </p>
           <div className="flex items-center gap-6">
             <a href="/press" className="hover:text-deep transition-colors">

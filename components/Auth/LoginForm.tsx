@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { TextInput } from "@/components/ui/FormField";
+import { TextInput, PasswordInput } from "@/components/ui/FormField";
 import { Button } from "@/components/ui/Button";
 
 export default function LoginForm() {
@@ -70,11 +70,10 @@ export default function LoginForm() {
           autoComplete="email"
           required
         />
-        <TextInput
+        <PasswordInput
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
-          type="password"
           autoComplete="current-password"
           required
         />
