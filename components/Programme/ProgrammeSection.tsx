@@ -6,31 +6,54 @@ import { ScrollTrigger } from "gsap/dist/ScrollTrigger";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import TrackCards from "./TrackCards";
 import SpeakerCarousel from "./SpeakerCarousel";
+import type { ProgrammeTrackData, SpeakerData } from "@/sanity/lib/queries";
 
 gsap.registerPlugin(ScrollTrigger);
 
-export default function ProgrammeSection() {
+interface ProgrammeSectionProps {
+  speakers?: SpeakerData[] | null;
+  tracks?: ProgrammeTrackData[] | null;
+  heading?: {
+    eyebrow?: string;
+    title?: string;
+  };
+}
+
+export default function ProgrammeSection({
+  speakers,
+  tracks,
+  heading,
+}: ProgrammeSectionProps) {
   const headingRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
-      gsap.fromTo(
-        headingRef.current,
-        { opacity: 0, y: 32 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.9,
-          ease: "power2.out",
-          scrollTrigger: {
-            trigger: headingRef.current,
-            start: "top 80%",
-          },
-        }
-      );
+      if (headingRef.current) {
+        gsap.fromTo(
+          headingRef.current,
+          { opacity: 0, y: 32 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.9,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: headingRef.current,
+              start: "top 80%",
+            },
+          }
+        );
+      }
     });
     return () => ctx.revert();
   }, []);
+
+  const hasSpeakers = Boolean(speakers && speakers.length > 0);
+  const hasTracks = Boolean(tracks && tracks.length > 0);
+
+  if (!hasSpeakers && !hasTracks) {
+    return null;
+  }
 
   return (
     <section
@@ -38,19 +61,13 @@ export default function ProgrammeSection() {
       className="relative w-full bg-paper py-28 md:py-36 px-6 md:px-16"
     >
       <div className="max-w-6xl mx-auto">
-        {/* <div ref={headingRef} className="mb-16">
-          <SectionHeading
-            eyebrow="Programme"
-            title="Three tracks, one current."
-            subtitle="Every track feeds the same idea from a different angle — the evidence, the experience, and the community that holds it together."
-          />
-        </div> */}
+        {hasTracks && <TrackCards tracks={tracks} />}
 
-        {/* <TrackCards /> */}
-
-        <div className="mt-28 md:mt-36">
-          <SpeakerCarousel />
-        </div>
+        {hasSpeakers && (
+          <div className={hasTracks ? "mt-28 md:mt-36" : ""}>
+            <SpeakerCarousel speakers={speakers} heading={heading} />
+          </div>
+        )}
       </div>
     </section>
   );

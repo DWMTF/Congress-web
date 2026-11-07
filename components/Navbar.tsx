@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { ChevronDown, LogOut, CreditCard, LayoutDashboard, Radio } from "lucide-react";
+import { ChevronDown, LogOut, CreditCard, LayoutDashboard, Radio, PenTool } from "lucide-react";
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 
@@ -14,7 +14,7 @@ const NAV_LINKS = [
   { label: "Contact", href: "#contact" },
 ];
 
-export default function Navbar() {
+export default function Navbar({ title }: { title?: string } = {}) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -123,7 +123,7 @@ export default function Navbar() {
       <Link href="/" className="flex items-center gap-3">
         <span className="h-8 w-8 rounded-full bg-deep" aria-hidden />
         <span className="font-semibold text-deep text-lg tracking-tight">
-          Blue Mind Congress
+          {title || "Blue Mind Congress"}
         </span>
       </Link>
 
@@ -187,6 +187,14 @@ export default function Navbar() {
                   >
                     <LayoutDashboard className="h-4 w-4 text-teal shrink-0" />
                     Admin Dashboard
+                  </Link>
+                  <Link
+                    href="/studio"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-teal hover:bg-teal/[0.08] transition-colors"
+                  >
+                    <PenTool className="h-4 w-4 text-teal shrink-0" />
+                    Content CMS (Studio)
                   </Link>
                   <div className="border-t border-deep/10" />
                 </>

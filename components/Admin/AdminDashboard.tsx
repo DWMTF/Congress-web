@@ -31,9 +31,10 @@ import {
   Trash2,
   PlusCircle,
   ExternalLink,
+  PenTool,
 } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { Button } from "@/components/ui/Button";
+import { Button, LinkButton } from "@/components/ui/Button";
 
 // Dynamically import MuxPlayer for the admin preview to prevent SSR hydration errors
 const MuxPlayer = dynamic(() => import("@mux/mux-player-react"), {
@@ -525,6 +526,14 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
         </div>
 
         <div className="flex items-center gap-3">
+          <LinkButton
+            href="/studio"
+            variant="glass"
+            className="flex items-center gap-2 px-4 py-2 text-sm"
+          >
+            <PenTool className="h-4 w-4 text-teal" />
+            Manage Content (CMS)
+          </LinkButton>
           <Button
             variant="ghost"
             onClick={reloadAll}
