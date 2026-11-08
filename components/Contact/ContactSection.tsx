@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Instagram, Facebook, Linkedin, Twitter, ArrowRight } from "lucide-react";
+import { Instagram, Facebook, Linkedin, Twitter, ArrowRight, Check, Loader2 } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { TextInput } from "@/components/ui/FormField";
@@ -19,11 +19,46 @@ interface ContactSectionProps {
 export default function ContactSection({ settings, heading }: ContactSectionProps) {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim() === "") return;
-    setSubscribed(true);
+    setErrorMessage("");
+
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setErrorMessage("Please enter an email address.");
+      return;
+    }
+
+    // Basic quick client check before dispatching
+    if (!trimmed.includes("@") || !trimmed.includes(".")) {
+      setErrorMessage("Please enter a valid email address.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/newsletter/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmed }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setErrorMessage(data.error || "Unable to subscribe. Please try again.");
+        return;
+      }
+
+      setSubscribed(true);
+      setEmail("");
+    } catch {
+      setErrorMessage("Network error. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const socialLinks = [
@@ -117,27 +152,48 @@ export default function ContactSection({ settings, heading }: ContactSectionProp
             </p>
 
             {subscribed ? (
-              <p className="text-deep font-medium">
-                {settings?.newsletterSuccessMessage || "You're on the list! Thank you."}
-              </p>
+              <div className="flex items-center gap-3 p-4 bg-teal/10 border border-teal/20 rounded-2xl text-deep animate-in fade-in zoom-in duration-200">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-teal text-paper shrink-0">
+                  <Check className="h-4 w-4" />
+                </span>
+                <p className="text-sm font-medium">
+                  {settings?.newsletterSuccessMessage || "You're on the list! Thank you."}
+                </p>
+              </div>
             ) : (
-              <form onSubmit={handleSubmit} className="flex gap-3">
-                <TextInput
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@email.com"
-                  className="flex-1 min-w-0 rounded-full"
-                />
-                <button
-                  type="submit"
-                  aria-label="Subscribe"
-                  className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-deep text-paper hover:bg-deep/90 transition-colors"
-                >
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              </form>
+              <div className="space-y-3">
+                <form onSubmit={handleSubmit} className="flex gap-3">
+                  <TextInput
+                    type="email"
+                    required
+                    disabled={loading}
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (errorMessage) setErrorMessage("");
+                    }}
+                    placeholder="you@email.com"
+                    className="flex-1 min-w-0 rounded-full"
+                  />
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    aria-label="Subscribe"
+                    className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-deep text-paper hover:bg-deep/90 disabled:opacity-50 transition-colors cursor-pointer"
+                  >
+                    {loading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <ArrowRight className="h-4 w-4" />
+                    )}
+                  </button>
+                </form>
+                {errorMessage && (
+                  <p className="text-xs text-red-600 font-medium pl-3 animate-in fade-in duration-150">
+                    {errorMessage}
+                  </p>
+                )}
+              </div>
             )}
           </GlassCard>
 
