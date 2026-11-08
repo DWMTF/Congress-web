@@ -60,7 +60,7 @@ export async function createCheckoutLink(
   const appId = process.env.ONEPAY_APP_ID!;
   const appToken = process.env.ONEPAY_APP_TOKEN!;
   const hashSalt = process.env.ONEPAY_HASH_SALT!;
-  const currency = params.currency ?? "LKR";
+  const currency = params.currency ?? "";
 
   if (!appId || !appToken || !hashSalt) {
     throw new Error("OnePay credentials are not configured (check ONEPAY_APP_ID, ONEPAY_APP_TOKEN, ONEPAY_HASH_SALT)");
