@@ -217,6 +217,15 @@ export default function PaymentSection() {
             </button>
           </p>
         )}
+
+        <p className="text-center mt-3 text-xs text-deep/40">
+          <button
+            onClick={() => router.push("/")}
+            className="text-deep/50 hover:text-deep underline underline-offset-2 transition-colors cursor-pointer"
+          >
+            I&apos;ll pay later — Return to Home
+          </button>
+        </p>
       </div>
     </section>
   );

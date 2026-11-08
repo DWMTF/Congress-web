@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin, setUserRole, UserRole } from "@/lib/auth/roles";
+import { getUserRole, requireAdmin, setUserRole, UserRole } from "@/lib/auth/roles";
 import { createServiceClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
 
@@ -74,12 +74,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid role specified" }, { status: 400 });
     }
 
-    // Prevent non-super_admin from changing a super_admin role
-    if (auth.userWithRole?.role !== "super_admin" && role === "super_admin") {
+    // 1. Prevent self-demotion / self-modification for all users (both admin & super_admin)
+    if (auth.userWithRole?.user.id === userId) {
       return NextResponse.json(
-        { error: "Only super administrators can assign the super_admin role." },
+        { error: "You cannot change or demote your own account role." },
         { status: 403 }
       );
+    }
+
+    // 2. Fetch the target user's current role
+    const currentTargetRole = await getUserRole(userId);
+
+    // 3. Prevent non-super_admin from assigning super_admin or modifying an existing super_admin
+    if (auth.userWithRole?.role !== "super_admin") {
+      if (currentTargetRole === "super_admin" || role === "super_admin") {
+        return NextResponse.json(
+          { error: "Only super administrators can assign or modify super administrator accounts." },
+          { status: 403 }
+        );
+      }
     }
 
     const result = await setUserRole(userId, role);
@@ -88,13 +101,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    await logger.info("ADMIN_ROLE_CHANGE", `User role updated for ${userId} to ${role}`, {
-      metadata: {
-        adminId: auth.userWithRole?.user.id,
-        targetUserId: userId,
-        newRole: role,
-      },
-    });
+    await logger.info(
+      "ADMIN_ROLE_CHANGE",
+      `User role updated for ${userId} from '${currentTargetRole}' to '${role}' by ${auth.userWithRole?.user.email || auth.userWithRole?.user.id}`,
+      {
+        metadata: {
+          adminId: auth.userWithRole?.user.id,
+          adminEmail: auth.userWithRole?.user.email,
+          targetUserId: userId,
+          previousRole: currentTargetRole,
+          newRole: role,
+        },
+      }
+    );
 
     return NextResponse.json({ message: "User role updated successfully", role });
   } catch (err) {

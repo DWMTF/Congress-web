@@ -439,6 +439,13 @@ export default function RegistrationSection() {
                         <Button onClick={() => router.push("/payment")} className="px-8">
                           Complete payment →
                         </Button>
+                        <button
+                          type="button"
+                          onClick={() => router.push("/")}
+                          className="mt-4 text-xs font-medium text-deep/50 hover:text-deep hover:underline underline-offset-4 transition-colors cursor-pointer"
+                        >
+                          I&apos;ll pay later
+                        </button>
                       </motion.div>
                     )}
                   </AnimatePresence>
