@@ -58,13 +58,13 @@ export default function ProgrammeSection({
   return (
     <section
       id="programme"
-      className="relative w-full bg-paper py-28 md:py-36 px-6 md:px-16"
+      className="relative w-full bg-paper py-16 md:py-20 px-6 md:px-16"
     >
       <div className="max-w-6xl mx-auto">
         {hasTracks && <TrackCards tracks={tracks} />}
 
         {hasSpeakers && (
-          <div className={hasTracks ? "mt-28 md:mt-36" : ""}>
+          <div className={hasTracks ? "mt-14 md:mt-18" : ""}>
             <SpeakerCarousel speakers={speakers} heading={heading} />
           </div>
         )}

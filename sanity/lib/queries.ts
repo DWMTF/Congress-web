@@ -140,12 +140,16 @@ export interface PressPageData {
   heroEyebrow?: string;
   heroTitle?: string;
   heroSubtitle?: string;
+  videoFileUrl?: string;
+  videoUrl?: string;
 }
 
 export interface SponsorshipPageData {
   heroEyebrow?: string;
   heroTitle?: string;
   heroSubtitle?: string;
+  videoFileUrl?: string;
+  videoUrl?: string;
   partnerButtonText?: string;
   tiersButtonText?: string;
   whatIsCongressEyebrow?: string;
@@ -304,13 +308,17 @@ export const HOME_PAGE_QUERY = `*[_type == "homePage"][0]{
 export const PRESS_PAGE_QUERY = `*[_type == "pressPage"][0]{
   heroEyebrow,
   heroTitle,
-  heroSubtitle
+  heroSubtitle,
+  "videoFileUrl": videoFile.asset->url,
+  videoUrl
 }`;
 
 export const SPONSORSHIP_PAGE_QUERY = `*[_type == "sponsorshipPage"][0]{
   heroEyebrow,
   heroTitle,
   heroSubtitle,
+  "videoFileUrl": videoFile.asset->url,
+  videoUrl,
   partnerButtonText,
   tiersButtonText,
   whatIsCongressEyebrow,

@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Button, LinkButton } from "@/components/ui/Button";
+import { IconBadge } from "@/components/ui/IconBadge";
 
 // Dynamically import MuxPlayer for the admin preview to prevent SSR hydration errors
 const MuxPlayer = dynamic(() => import("@mux/mux-player-react"), {
@@ -92,10 +93,11 @@ interface OverviewMetrics {
 }
 
 interface SystemLog {
-  id: number;
+  id: string | number;
   level: "info" | "warn" | "error";
   event: string;
   message: string;
+  log_source?: "payment" | "system";
   payment_id?: string;
   registration_id?: string;
   metadata?: Record<string, unknown>;
@@ -166,6 +168,7 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
   // Logs Data & Filters
   const [logs, setLogs] = useState<SystemLog[]>([]);
   const [searchLog, setSearchLog] = useState("");
+  const [filterLogSource, setFilterLogSource] = useState<string>("all");
   const [filterLogLevel, setFilterLogLevel] = useState<string>("all");
   const [filterLogEvent, setFilterLogEvent] = useState<string>("all");
   const [selectedLogDetail, setSelectedLogDetail] = useState<SystemLog | null>(null);
@@ -225,9 +228,11 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
     }
   }
 
-  async function fetchLogs() {
+  async function fetchLogs(sourceOverride?: string) {
     try {
+      const activeSource = sourceOverride !== undefined ? sourceOverride : filterLogSource;
       const query = new URLSearchParams();
+      if (activeSource !== "all") query.set("source", activeSource);
       if (filterLogLevel !== "all") query.set("level", filterLogLevel);
       if (filterLogEvent !== "all") query.set("event", filterLogEvent);
       if (searchLog) query.set("search", searchLog);
@@ -297,6 +302,12 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
 
   // Update user role
   async function handleUpdateRole(userId: string, newRole: "user" | "admin" | "super_admin") {
+    if (userId === currentUser.id) {
+      setActionMessage({ type: "error", text: "You cannot change or demote your own account role." });
+      setTimeout(() => setActionMessage(null), 4000);
+      return;
+    }
+
     setUpdatingUserId(userId);
     try {
       const res = await fetch("/api/admin/roles", {
@@ -486,6 +497,7 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
   // Filtered logs
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
+      const matchSource = filterLogSource === "all" || log.log_source === filterLogSource;
       const matchLevel = filterLogLevel === "all" || log.level === filterLogLevel;
       const matchEvent = filterLogEvent === "all" || log.event === filterLogEvent;
 
@@ -499,58 +511,63 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
         log.payment_id?.toLowerCase().includes(term) ||
         JSON.stringify(log.metadata || {}).toLowerCase().includes(term);
 
-      return matchLevel && matchEvent && matchSearch;
+      return matchSource && matchLevel && matchEvent && matchSearch;
     });
-  }, [logs, filterLogLevel, filterLogEvent, searchLog]);
+  }, [logs, filterLogSource, filterLogLevel, filterLogEvent, searchLog]);
 
   const activeStream = streams[0] || null;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 space-y-8">
       {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-6 border-b border-deep/10">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 pb-8 border-b border-deep/10">
         <div>
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-teal/15 text-deep">
-              <Shield className="h-3.5 w-3.5 text-teal" />
+          <div className="flex items-center gap-3 mb-2">
+            <p className="eyebrow text-teal">Administration &amp; Operations</p>
+            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-semibold bg-teal/15 text-teal border border-teal/25">
+              <Shield className="h-3.5 w-3.5" />
               Role: {currentUser.role}
             </span>
-            <span className="text-xs text-deep/50">{currentUser.email}</span>
           </div>
-          <h1 className="font-display font-bold text-3xl text-deep mt-2">
+          <h1 className="font-display font-semibold text-3xl sm:text-4xl text-deep tracking-tight text-balance">
             Congress Admin Console
           </h1>
-          <p className="text-sm text-deep/60 mt-1">
-            Manage registrations, stream broadcasts, verify tickets, inspect audit logs, and administer role-based access.
+          <p className="text-sm md:text-base text-deep/65 mt-2 max-w-2xl text-balance leading-relaxed">
+            Manage registrations, monitor live broadcasts, verify ticket admissions, inspect immutable audit logs, and administer role-based access.
+          </p>
+          <p className="text-xs text-deep/45 mt-2 font-mono">
+            Logged in as {currentUser.email}
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <LinkButton
             href="/studio"
-            variant="glass"
-            className="flex items-center gap-2 px-4 py-2 text-sm"
+            target="_blank"
+            rel="noopener noreferrer"
+            variant="ghost"
+            className="flex items-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-medium rounded-full shadow-xs"
           >
             <PenTool className="h-4 w-4 text-teal" />
-            Manage Content (CMS)
+            <span>Manage Content (CMS)</span>
           </LinkButton>
           <Button
             variant="ghost"
             onClick={reloadAll}
             disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 text-sm"
+            className="flex items-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-medium rounded-full shadow-xs"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            Refresh Data
+            <span>Refresh</span>
           </Button>
           {activeTab === "registrations" && (
             <Button
               variant="primary"
               onClick={exportCSV}
-              className="flex items-center gap-2 px-5 py-2 text-sm"
+              className="flex items-center gap-2 px-6 py-2.5 text-xs sm:text-sm font-medium rounded-full shadow-sm"
             >
               <Download className="h-4 w-4" />
-              Export CSV
+              <span>Export CSV</span>
             </Button>
           )}
         </div>
@@ -575,13 +592,13 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
       )}
 
       {/* Navigation Tabs */}
-      <div className="flex overflow-x-auto gap-2 p-1.5 bg-deep/[0.04] rounded-2xl border border-deep/10">
+      <div className="flex overflow-x-auto gap-2 p-1.5 bg-deep/[0.03] rounded-full border border-deep/10 shadow-xs">
         {[
-          { id: "overview", label: "Overview & Analytics", icon: TrendingUp },
-          { id: "registrations", label: `Registrations (${registrations.length})`, icon: Users },
-          { id: "users", label: `User Roles (${users.length})`, icon: UserCheck },
-          { id: "stream", label: `Live Stream (${streams.length})`, icon: Radio },
-          { id: "logs", label: `Audit Logs (${logs.length})`, icon: Activity },
+          { id: "overview", label: "Overview & Analytics", count: null, icon: TrendingUp },
+          { id: "registrations", label: "Registrations", count: registrations.length, icon: Users },
+          { id: "users", label: "User Roles", count: users.length, icon: UserCheck },
+          { id: "stream", label: "Live Stream", count: streams.length, icon: Radio },
+          { id: "logs", label: "Audit Logs", count: logs.length, icon: Activity },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -589,14 +606,23 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as TabType)}
-              className={`flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-medium transition-all whitespace-nowrap cursor-pointer ${
                 isActive
-                  ? "bg-white text-deep shadow-sm border border-deep/10 font-semibold"
-                  : "text-deep/70 hover:text-deep hover:bg-white/50"
+                  ? "bg-deep text-paper shadow-sm font-semibold"
+                  : "text-deep/70 hover:text-deep hover:bg-white/80"
               }`}
             >
               <Icon className={`h-4 w-4 ${isActive ? "text-teal" : "text-deep/40"}`} />
-              {tab.label}
+              <span>{tab.label}</span>
+              {tab.count !== null && (
+                <span
+                  className={`ml-1 text-[11px] font-mono font-semibold px-2 py-0.5 rounded-full ${
+                    isActive ? "bg-teal/20 text-teal" : "bg-deep/[0.06] text-deep/60"
+                  }`}
+                >
+                  {tab.count}
+                </span>
+              )}
             </button>
           );
         })}
@@ -606,76 +632,60 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
       {activeTab === "overview" && (
         <div className="space-y-8">
           {/* KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            <GlassCard className="p-6">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-deep/60 uppercase tracking-wider">
-                  Total Registrations
-                </span>
-                <div className="p-2.5 rounded-xl bg-deep/[0.06] text-deep">
-                  <Users className="h-5 w-5" />
-                </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <GlassCard className="p-7 relative overflow-hidden group hover:border-teal/30 hover:shadow-lg hover:shadow-deep/5 transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <span className="eyebrow text-teal">Total Registrations</span>
+                <IconBadge icon={Users} className="h-10 w-10" iconClassName="h-4 w-4 text-teal" />
               </div>
-              <p className="text-3xl font-display font-bold text-deep mt-3">
+              <p className="text-3xl sm:text-4xl font-display font-semibold text-deep tracking-tight">
                 {metrics?.totalRegistrations ?? "—"}
               </p>
-              <div className="flex items-center gap-3 mt-3 text-xs text-deep/60">
-                <span>In-person: <b className="text-deep">{metrics?.inPersonRegistrations ?? 0}</b></span>
+              <div className="flex items-center gap-3 mt-4 text-xs text-deep/60 border-t border-deep/5 pt-3">
+                <span>In-person: <b className="text-deep font-semibold">{metrics?.inPersonRegistrations ?? 0}</b></span>
                 <span>•</span>
-                <span>Livestream: <b className="text-deep">{metrics?.livestreamRegistrations ?? 0}</b></span>
+                <span>Livestream: <b className="text-deep font-semibold">{metrics?.livestreamRegistrations ?? 0}</b></span>
               </div>
             </GlassCard>
 
-            <GlassCard className="p-6">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-deep/60 uppercase tracking-wider">
-                  Confirmed Attendees
-                </span>
-                <div className="p-2.5 rounded-xl bg-teal/15 text-teal">
-                  <CheckCircle2 className="h-5 w-5" />
-                </div>
+            <GlassCard className="p-7 relative overflow-hidden group hover:border-teal/30 hover:shadow-lg hover:shadow-deep/5 transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <span className="eyebrow text-teal">Confirmed Attendees</span>
+                <IconBadge icon={CheckCircle2} className="h-10 w-10" iconClassName="h-4 w-4 text-teal" />
               </div>
-              <p className="text-3xl font-display font-bold text-deep mt-3">
+              <p className="text-3xl sm:text-4xl font-display font-semibold text-deep tracking-tight">
                 {metrics?.confirmedRegistrations ?? "—"}
               </p>
-              <div className="flex items-center gap-2 mt-3 text-xs text-deep/60">
-                <span>Pending: <b className="text-amber-600">{metrics?.pendingRegistrations ?? 0}</b></span>
+              <div className="flex items-center gap-3 mt-4 text-xs text-deep/60 border-t border-deep/5 pt-3">
+                <span>Pending: <b className="text-amber-800 font-semibold">{metrics?.pendingRegistrations ?? 0}</b></span>
                 <span>•</span>
-                <span>Cancelled: <b className="text-red-500">{metrics?.cancelledRegistrations ?? 0}</b></span>
+                <span>Cancelled: <b className="text-red-700 font-semibold">{metrics?.cancelledRegistrations ?? 0}</b></span>
               </div>
             </GlassCard>
 
-            <GlassCard className="p-6">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-deep/60 uppercase tracking-wider">
-                  Total Revenue
-                </span>
-                <div className="p-2.5 rounded-xl bg-teal/20 text-deep">
-                  <CreditCard className="h-5 w-5 text-teal" />
-                </div>
+            <GlassCard className="p-7 relative overflow-hidden group hover:border-teal/30 hover:shadow-lg hover:shadow-deep/5 transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <span className="eyebrow text-teal">Total Revenue</span>
+                <IconBadge icon={CreditCard} className="h-10 w-10" iconClassName="h-4 w-4 text-teal" />
               </div>
-              <p className="text-3xl font-display font-bold text-deep mt-3">
+              <p className="text-3xl sm:text-4xl font-display font-semibold text-deep tracking-tight">
                 LKR {(metrics?.totalRevenueLkr ?? 0).toLocaleString()}
               </p>
-              <p className="text-xs text-deep/60 mt-3">
-                {metrics?.completedPaymentsCount ?? 0} completed transactions
+              <p className="text-xs text-deep/60 mt-4 border-t border-deep/5 pt-3">
+                <b className="text-deep font-semibold">{metrics?.completedPaymentsCount ?? 0}</b> completed transactions
               </p>
             </GlassCard>
 
-            <GlassCard className="p-6">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-deep/60 uppercase tracking-wider">
-                  Accounts &amp; Admins
-                </span>
-                <div className="p-2.5 rounded-xl bg-deep/[0.06] text-deep">
-                  <Shield className="h-5 w-5" />
-                </div>
+            <GlassCard className="p-7 relative overflow-hidden group hover:border-teal/30 hover:shadow-lg hover:shadow-deep/5 transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <span className="eyebrow text-teal">Accounts &amp; Admins</span>
+                <IconBadge icon={Shield} className="h-10 w-10" iconClassName="h-4 w-4 text-teal" />
               </div>
-              <p className="text-3xl font-display font-bold text-deep mt-3">
+              <p className="text-3xl sm:text-4xl font-display font-semibold text-deep tracking-tight">
                 {metrics?.totalUsers ?? "—"}
               </p>
-              <p className="text-xs text-deep/60 mt-3">
-                <b className="text-teal">{metrics?.adminCount ?? 0}</b> administrator account(s)
+              <p className="text-xs text-deep/60 mt-4 border-t border-deep/5 pt-3">
+                <b className="text-teal font-semibold">{metrics?.adminCount ?? 0}</b> administrator account(s)
               </p>
             </GlassCard>
           </div>
@@ -683,21 +693,24 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
           {/* Breakdown & Recent Activity */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Attendance breakdown */}
-            <GlassCard className="p-6 space-y-5">
-              <h3 className="font-display font-semibold text-lg text-deep">
-                Attendance Distribution
-              </h3>
+            <GlassCard className="p-7 space-y-6">
+              <div>
+                <span className="eyebrow text-teal block mb-1">Delegate Distribution</span>
+                <h3 className="font-display font-semibold text-xl text-deep">
+                  Attendance by Category
+                </h3>
+              </div>
               {metrics && metrics.totalRegistrations > 0 ? (
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between text-sm mb-1.5">
+                <div className="space-y-5">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
                       <span className="font-medium text-deep">In-Person Delegate Pass</span>
-                      <span className="text-deep/70">
+                      <span className="text-deep/70 font-mono text-xs">
                         {metrics.inPersonRegistrations} (
                         {Math.round((metrics.inPersonRegistrations / metrics.totalRegistrations) * 100)}%)
                       </span>
                     </div>
-                    <div className="w-full bg-deep/[0.08] h-3 rounded-full overflow-hidden">
+                    <div className="w-full bg-deep/[0.06] h-3 rounded-full overflow-hidden p-0.5">
                       <div
                         className="bg-deep h-full rounded-full transition-all duration-500"
                         style={{
@@ -707,15 +720,15 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
                     </div>
                   </div>
 
-                  <div>
-                    <div className="flex justify-between text-sm mb-1.5">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
                       <span className="font-medium text-deep">Global Livestream Pass</span>
-                      <span className="text-deep/70">
+                      <span className="text-deep/70 font-mono text-xs">
                         {metrics.livestreamRegistrations} (
                         {Math.round((metrics.livestreamRegistrations / metrics.totalRegistrations) * 100)}%)
                       </span>
                     </div>
-                    <div className="w-full bg-deep/[0.08] h-3 rounded-full overflow-hidden">
+                    <div className="w-full bg-deep/[0.06] h-3 rounded-full overflow-hidden p-0.5">
                       <div
                         className="bg-teal h-full rounded-full transition-all duration-500"
                         style={{
@@ -731,25 +744,28 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
             </GlassCard>
 
             {/* Recent Registrations Preview */}
-            <GlassCard className="p-6 space-y-4">
+            <GlassCard className="p-7 space-y-6">
               <div className="flex items-center justify-between">
-                <h3 className="font-display font-semibold text-lg text-deep">
-                  Recent Registrations
-                </h3>
+                <div>
+                  <span className="eyebrow text-teal block mb-1">Latest Sign-ups</span>
+                  <h3 className="font-display font-semibold text-xl text-deep">
+                    Recent Registrations
+                  </h3>
+                </div>
                 <button
                   onClick={() => setActiveTab("registrations")}
-                  className="text-xs text-teal hover:underline font-medium"
+                  className="text-xs text-teal hover:underline font-semibold tracking-wide inline-flex items-center gap-1 cursor-pointer"
                 >
-                  View all
+                  View all &rarr;
                 </button>
               </div>
 
               {recentRegistrations.length === 0 ? (
                 <p className="text-sm text-deep/50 py-4">No registrations yet.</p>
               ) : (
-                <div className="divide-y divide-deep/10">
+                <div className="divide-y divide-deep/5">
                   {recentRegistrations.slice(0, 5).map((reg) => (
-                    <div key={reg.id} className="py-3 flex items-center justify-between">
+                    <div key={reg.id} className="py-3.5 flex items-center justify-between">
                       <div>
                         <p className="text-sm font-semibold text-deep">
                           {reg.first_name} {reg.last_name}
@@ -758,18 +774,18 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
                       </div>
                       <div className="text-right">
                         <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
+                          className={`inline-flex items-center px-3 py-0.5 rounded-full text-xs font-semibold capitalize ${
                             reg.status === "confirmed"
-                              ? "bg-teal/15 text-teal"
+                              ? "bg-teal/15 text-teal border border-teal/25"
                               : reg.status === "cancelled"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-amber-100 text-amber-800"
+                              ? "bg-red-500/10 text-red-700 border border-red-200"
+                              : "bg-amber-500/15 text-amber-800 border border-amber-300/40"
                           }`}
                         >
                           {reg.status}
                         </span>
-                        <p className="text-xs text-deep/50 mt-1 capitalize">
-                          {reg.attendance_type}
+                        <p className="text-[11px] text-deep/50 mt-1 capitalize font-medium">
+                          {reg.attendance_type === "in-person" ? "In-Person Pass" : "Livestream Pass"}
                         </p>
                       </div>
                     </div>
@@ -783,17 +799,17 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
 
       {/* Tab 2: REGISTRATIONS MANAGEMENT */}
       {activeTab === "registrations" && (
-        <GlassCard className="p-6 space-y-6">
+        <GlassCard className="p-7 space-y-6">
           {/* Filters & Search */}
           <div className="flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center">
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-deep/40" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-deep/40" />
               <input
                 type="text"
                 placeholder="Search by name, email, org, ID..."
                 value={searchReg}
                 onChange={(e) => setSearchReg(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-paper rounded-xl border border-deep/15 text-sm text-deep placeholder:text-deep/40 focus:outline-none focus:border-deep"
+                className="w-full pl-11 pr-4 py-2.5 bg-white rounded-full border border-deep/15 text-xs sm:text-sm text-deep placeholder:text-deep/40 focus:outline-none focus:border-teal shadow-xs transition-colors"
               />
             </div>
 
@@ -801,7 +817,7 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
-                className="px-3 py-2 bg-paper rounded-xl border border-deep/15 text-sm text-deep focus:outline-none focus:border-deep"
+                className="px-4 py-2.5 bg-white rounded-full border border-deep/15 text-xs sm:text-sm text-deep focus:outline-none focus:border-teal shadow-xs transition-colors cursor-pointer"
               >
                 <option value="all">All Ticket Types</option>
                 <option value="in-person">In-Person</option>
@@ -811,7 +827,7 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-3 py-2 bg-paper rounded-xl border border-deep/15 text-sm text-deep focus:outline-none focus:border-deep"
+                className="px-4 py-2.5 bg-white rounded-full border border-deep/15 text-xs sm:text-sm text-deep focus:outline-none focus:border-teal shadow-xs transition-colors cursor-pointer"
               >
                 <option value="all">All Statuses</option>
                 <option value="confirmed">Confirmed</option>
@@ -822,30 +838,30 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
           </div>
 
           {/* Registrations Table */}
-          <div className="overflow-x-auto rounded-xl border border-deep/10 bg-white">
+          <div className="overflow-x-auto rounded-3xl border border-deep/10 bg-white shadow-xs">
             <table className="w-full text-left text-sm">
-              <thead className="bg-deep/[0.03] text-xs font-semibold text-deep/70 uppercase border-b border-deep/10">
+              <thead className="bg-deep/[0.025] text-[11px] font-sans font-semibold text-deep/70 uppercase tracking-wider border-b border-deep/10">
                 <tr>
-                  <th className="px-4 py-3.5">Attendee</th>
-                  <th className="px-4 py-3.5">Organization</th>
-                  <th className="px-4 py-3.5">Ticket Type</th>
-                  <th className="px-4 py-3.5">Amount (LKR)</th>
-                  <th className="px-4 py-3.5">Status</th>
-                  <th className="px-4 py-3.5">Created</th>
-                  <th className="px-4 py-3.5 text-right">Actions</th>
+                  <th className="px-5 py-4">Attendee</th>
+                  <th className="px-5 py-4">Organization</th>
+                  <th className="px-5 py-4">Ticket Type</th>
+                  <th className="px-5 py-4">Amount (LKR)</th>
+                  <th className="px-5 py-4">Status</th>
+                  <th className="px-5 py-4">Created</th>
+                  <th className="px-5 py-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-deep/5">
                 {filteredRegistrations.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-deep/50">
+                    <td colSpan={7} className="px-5 py-10 text-center text-deep/50">
                       No registrations match the selected criteria.
                     </td>
                   </tr>
                 ) : (
                   filteredRegistrations.map((reg) => (
-                    <tr key={reg.id} className="hover:bg-deep/[0.015] transition-colors">
-                      <td className="px-4 py-3.5">
+                    <tr key={reg.id} className="hover:bg-teal/[0.02] transition-colors">
+                      <td className="px-5 py-4">
                         <div className="font-semibold text-deep">
                           {reg.first_name} {reg.last_name}
                         </div>
@@ -854,40 +870,40 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
                           ID: {reg.id}
                         </div>
                       </td>
-                      <td className="px-4 py-3.5 text-deep/80">
+                      <td className="px-5 py-4 text-deep/80">
                         {reg.organization || "—"}
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-5 py-4">
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
                             reg.attendance_type === "in-person"
-                              ? "bg-deep/10 text-deep"
-                              : "bg-teal/15 text-teal"
+                              ? "bg-deep/[0.06] text-deep border border-deep/10"
+                              : "bg-teal/10 text-teal border border-teal/20"
                           }`}
                         >
-                          {reg.attendance_type === "in-person" ? "In-Person" : "Livestream"}
+                          {reg.attendance_type === "in-person" ? "In-Person Pass" : "Livestream Pass"}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 font-medium text-deep">
+                      <td className="px-5 py-4 font-semibold text-deep font-mono text-sm">
                         {Number(reg.amount_lkr).toLocaleString()}
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-5 py-4">
                         <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold capitalize ${
                             reg.status === "confirmed"
-                              ? "bg-teal/15 text-teal"
+                              ? "bg-teal/15 text-teal border border-teal/25"
                               : reg.status === "cancelled"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-amber-100 text-amber-800"
+                              ? "bg-red-500/10 text-red-700 border border-red-200"
+                              : "bg-amber-500/15 text-amber-800 border border-amber-300/40"
                           }`}
                         >
                           {reg.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-deep/60 whitespace-nowrap">
+                      <td className="px-5 py-4 text-xs text-deep/60 whitespace-nowrap">
                         {new Date(reg.created_at).toLocaleDateString()}
                       </td>
-                      <td className="px-4 py-3.5 text-right">
+                      <td className="px-5 py-4 text-right">
                         <select
                           disabled={updatingRegId === reg.id}
                           value={reg.status}
@@ -897,7 +913,7 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
                               targetStatus: e.target.value as "pending" | "confirmed" | "cancelled",
                             })
                           }
-                          className="text-xs bg-paper border border-deep/20 rounded-lg px-2 py-1 font-medium text-deep focus:outline-none cursor-pointer hover:border-deep"
+                          className="text-xs bg-paper border border-deep/15 rounded-full px-3 py-1.5 font-medium text-deep focus:outline-none focus:border-teal cursor-pointer hover:bg-white transition-colors"
                         >
                           <option value="pending">Set Pending</option>
                           <option value="confirmed">Set Confirmed</option>
@@ -915,31 +931,31 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
 
       {/* Confirmation Modal for Registration Status Override */}
       {pendingStatusChange && (
-        <div className="fixed inset-0 z-50 bg-deep/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-deep/15 space-y-6 animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 bg-deep/50 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-deep/10 space-y-6 animate-in fade-in zoom-in duration-200">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-amber-100 text-amber-800 rounded-2xl">
+                <div className="p-3 bg-amber-500/15 text-amber-800 border border-amber-300/40 rounded-2xl">
                   <AlertTriangle className="h-6 w-6" />
                 </div>
                 <div>
-                  <h3 className="font-display font-bold text-lg text-deep">
+                  <h3 className="font-display font-semibold text-lg text-deep">
                     Confirm Status Change
                   </h3>
-                  <p className="text-xs text-red-600 font-semibold uppercase tracking-wider">
-                    ⚠️ Irreversible Action
+                  <p className="text-xs text-amber-800 font-semibold uppercase tracking-wider">
+                    Administrative Override
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setPendingStatusChange(null)}
-                className="text-deep/40 hover:text-deep p-1 rounded-lg"
+                className="text-deep/40 hover:text-deep p-1 rounded-full hover:bg-deep/5 transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="bg-deep/[0.03] border border-deep/10 rounded-2xl p-4 space-y-3 text-sm">
+            <div className="bg-deep/[0.025] border border-deep/10 rounded-2xl p-5 space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-deep/60">Attendee:</span>
                 <span className="font-semibold text-deep">
@@ -957,17 +973,17 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
               <div className="border-t border-deep/10 pt-2 flex items-center justify-between">
                 <span className="text-deep/60">Transition:</span>
                 <div className="flex items-center gap-2 font-semibold">
-                  <span className="capitalize px-2 py-0.5 rounded bg-deep/10 text-deep text-xs">
+                  <span className="capitalize px-2.5 py-0.5 rounded-full bg-deep/[0.06] text-deep text-xs border border-deep/10">
                     {pendingStatusChange.reg.status}
                   </span>
                   <span>➔</span>
                   <span
-                    className={`capitalize px-2 py-0.5 rounded text-xs ${
+                    className={`capitalize px-2.5 py-0.5 rounded-full text-xs ${
                       pendingStatusChange.targetStatus === "confirmed"
-                        ? "bg-teal/20 text-teal"
+                        ? "bg-teal/15 text-teal border border-teal/25"
                         : pendingStatusChange.targetStatus === "cancelled"
-                        ? "bg-red-100 text-red-700"
-                        : "bg-amber-100 text-amber-800"
+                        ? "bg-red-500/10 text-red-700 border border-red-200"
+                        : "bg-amber-500/15 text-amber-800 border border-amber-300/40"
                     }`}
                   >
                     {pendingStatusChange.targetStatus}
@@ -986,7 +1002,7 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
               <Button
                 variant="ghost"
                 onClick={() => setPendingStatusChange(null)}
-                className="px-5 py-2.5 text-sm"
+                className="px-6 py-2.5 text-xs sm:text-sm font-medium rounded-full"
               >
                 Cancel
               </Button>
@@ -994,9 +1010,9 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
                 variant="primary"
                 disabled={updatingRegId !== null}
                 onClick={confirmStatusChange}
-                className="px-6 py-2.5 text-sm bg-deep hover:bg-deep/90 text-white"
+                className="px-7 py-2.5 text-xs sm:text-sm font-medium rounded-full shadow-sm"
               >
-                {updatingRegId ? "Applying..." : "Yes, Confirm Status Change"}
+                {updatingRegId ? "Applying..." : "Confirm Status Change"}
               </Button>
             </div>
           </div>
@@ -1005,94 +1021,119 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
 
       {/* Tab 3: USER ROLES & ACCESS CONTROL */}
       {activeTab === "users" && (
-        <GlassCard className="p-6 space-y-6">
+        <GlassCard className="p-7 space-y-6">
           <div className="flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center">
             <div>
-              <h3 className="font-display font-semibold text-lg text-deep">
+              <span className="eyebrow text-teal block mb-1">Access Control</span>
+              <h3 className="font-display font-semibold text-xl text-deep">
                 User Role Administration
               </h3>
-              <p className="text-xs text-deep/60">
+              <p className="text-xs text-deep/60 mt-1">
                 Grant or revoke administrative permissions. Changes take effect immediately and are logged.
               </p>
             </div>
 
             <div className="relative max-w-xs w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-deep/40" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-deep/40" />
               <input
                 type="text"
                 placeholder="Search users..."
                 value={searchUser}
                 onChange={(e) => setSearchUser(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-paper rounded-xl border border-deep/15 text-sm text-deep placeholder:text-deep/40 focus:outline-none focus:border-deep"
+                className="w-full pl-10 pr-4 py-2.5 bg-white rounded-full border border-deep/15 text-xs sm:text-sm text-deep placeholder:text-deep/40 focus:outline-none focus:border-teal shadow-xs transition-colors"
               />
             </div>
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-deep/10 bg-white">
+          <div className="overflow-x-auto rounded-3xl border border-deep/10 bg-white shadow-xs">
             <table className="w-full text-left text-sm">
-              <thead className="bg-deep/[0.03] text-xs font-semibold text-deep/70 uppercase border-b border-deep/10">
+              <thead className="bg-deep/[0.025] text-[11px] font-sans font-semibold text-deep/70 uppercase tracking-wider border-b border-deep/10">
                 <tr>
-                  <th className="px-4 py-3.5">User Email</th>
-                  <th className="px-4 py-3.5">Name</th>
-                  <th className="px-4 py-3.5">Role</th>
-                  <th className="px-4 py-3.5">Registered</th>
-                  <th className="px-4 py-3.5">Last Sign In</th>
-                  <th className="px-4 py-3.5 text-right">Assign Role</th>
+                  <th className="px-5 py-4">User Email</th>
+                  <th className="px-5 py-4">Name</th>
+                  <th className="px-5 py-4">Role</th>
+                  <th className="px-5 py-4">Registered</th>
+                  <th className="px-5 py-4">Last Sign In</th>
+                  <th className="px-5 py-4 text-right">Assign Role</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-deep/5">
                 {filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-deep/50">
+                    <td colSpan={6} className="px-5 py-10 text-center text-deep/50">
                       No user accounts found.
                     </td>
                   </tr>
                 ) : (
                   filteredUsers.map((u) => (
-                    <tr key={u.id} className="hover:bg-deep/[0.015] transition-colors">
-                      <td className="px-4 py-3.5 font-medium text-deep">
-                        {u.email}
+                    <tr key={u.id} className="hover:bg-teal/[0.02] transition-colors">
+                      <td className="px-5 py-4 font-semibold text-deep">
+                        <span className="font-mono text-xs">{u.email}</span>
                         {u.id === currentUser.id && (
-                          <span className="ml-2 text-[10px] bg-deep/10 text-deep px-1.5 py-0.5 rounded">
+                          <span className="ml-2 text-[10px] font-sans font-semibold uppercase bg-teal/15 text-teal px-2 py-0.5 rounded-full border border-teal/20">
                             You
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3.5 text-deep/80">
+                      <td className="px-5 py-4 text-deep/80">
                         {u.firstName || u.lastName ? `${u.firstName} ${u.lastName}` : "—"}
                       </td>
-                      <td className="px-4 py-3.5">
+                      <td className="px-5 py-4">
                         <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium uppercase tracking-wider ${
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${
                             u.role === "super_admin"
-                              ? "bg-purple-100 text-purple-800"
+                              ? "bg-purple-500/15 text-purple-800 border border-purple-200"
                               : u.role === "admin"
-                              ? "bg-teal/20 text-teal"
-                              : "bg-deep/[0.06] text-deep/70"
+                              ? "bg-teal/15 text-teal border border-teal/25"
+                              : "bg-deep/[0.06] text-deep/70 border border-deep/10"
                           }`}
                         >
                           {u.role}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-deep/60">
+                      <td className="px-5 py-4 text-xs text-deep/60">
                         {new Date(u.createdAt).toLocaleDateString()}
                       </td>
-                      <td className="px-4 py-3.5 text-xs text-deep/60">
+                      <td className="px-5 py-4 text-xs text-deep/60">
                         {u.lastSignInAt ? new Date(u.lastSignInAt).toLocaleString() : "Never"}
                       </td>
-                      <td className="px-4 py-3.5 text-right">
-                        <select
-                          disabled={updatingUserId === u.id || (u.role === "super_admin" && currentUser.role !== "super_admin")}
-                          value={u.role}
-                          onChange={(e) =>
-                            handleUpdateRole(u.id, e.target.value as "user" | "admin" | "super_admin")
-                          }
-                          className="text-xs bg-paper border border-deep/20 rounded-lg px-2.5 py-1 font-medium text-deep focus:outline-none cursor-pointer hover:border-deep"
-                        >
-                          <option value="user">User (Default)</option>
-                          <option value="admin">Admin</option>
-                          <option value="super_admin">Super Admin</option>
-                        </select>
+                      <td className="px-5 py-4 text-right">
+                        {u.id === currentUser.id ? (
+                          <span
+                            className="inline-flex items-center text-[11px] text-deep/45 font-semibold px-3 py-1 bg-deep/[0.04] rounded-full border border-deep/10 cursor-not-allowed select-none"
+                            title="You cannot modify or demote your own account role"
+                          >
+                            Current Account
+                          </span>
+                        ) : (
+                          <select
+                            disabled={
+                              updatingUserId === u.id ||
+                              (u.role === "super_admin" && currentUser.role !== "super_admin")
+                            }
+                            value={u.role}
+                            onChange={(e) =>
+                              handleUpdateRole(u.id, e.target.value as "user" | "admin" | "super_admin")
+                            }
+                            className={`text-xs bg-paper border border-deep/15 rounded-full px-3 py-1.5 font-medium text-deep focus:outline-none focus:border-teal transition-colors ${
+                              updatingUserId === u.id ||
+                              (u.role === "super_admin" && currentUser.role !== "super_admin")
+                                ? "opacity-50 cursor-not-allowed"
+                                : "cursor-pointer hover:bg-white"
+                            }`}
+                            title={
+                              u.role === "super_admin" && currentUser.role !== "super_admin"
+                                ? "Only super administrators can modify super admins"
+                                : undefined
+                            }
+                          >
+                            <option value="user">User (Default)</option>
+                            <option value="admin">Admin</option>
+                            {currentUser.role === "super_admin" && (
+                              <option value="super_admin">Super Admin</option>
+                            )}
+                          </select>
+                        )}
                       </td>
                     </tr>
                   ))
@@ -1107,38 +1148,36 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
       {activeTab === "stream" && (
         <div className="space-y-8">
           {/* Stream Status / Creation Card */}
-          <GlassCard className="p-6 md:p-8 space-y-6">
+          <GlassCard className="p-7 md:p-8 space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <Radio className="h-5 w-5 text-teal" />
-                  <h3 className="font-display font-semibold text-xl text-deep">
-                    Mux Live Stream Broadcaster Console
-                  </h3>
-                </div>
-                <p className="text-xs text-deep/60">
+                <span className="eyebrow text-teal block mb-1">Mux Encrypted Broadcast</span>
+                <h3 className="font-display font-semibold text-xl text-deep">
+                  Broadcaster &amp; Ingest Management
+                </h3>
+                <p className="text-xs text-deep/60 mt-1">
                   Provision live streams with encrypted signed tokens. Broadcast using OBS Studio, vMix, or hardware encoders.
                 </p>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <Button
                   variant="ghost"
                   onClick={fetchStreams}
-                  className="flex items-center gap-1.5 text-xs"
+                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-full shadow-xs"
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
-                  Refresh Status
+                  <span>Refresh Status</span>
                 </Button>
                 {!activeStream && (
                   <Button
                     variant="primary"
                     disabled={creatingStream}
                     onClick={handleCreateStream}
-                    className="flex items-center gap-2 text-xs px-5 py-2.5"
+                    className="flex items-center gap-2 px-6 py-2.5 text-xs sm:text-sm font-medium rounded-full shadow-sm"
                   >
                     <PlusCircle className="h-4 w-4" />
-                    {creatingStream ? "Provisioning..." : "Provision New Mux Stream"}
+                    <span>{creatingStream ? "Provisioning..." : "Provision New Mux Stream"}</span>
                   </Button>
                 )}
               </div>
@@ -1147,17 +1186,17 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
             {activeStream ? (
               <div className="space-y-6 pt-2">
                 {/* Active Stream Overview Bar */}
-                <div className="p-5 rounded-2xl bg-deep/[0.03] border border-deep/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="p-6 rounded-3xl bg-deep/[0.025] border border-deep/10 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-3">
-                      <span className="text-base font-display font-bold text-deep">
+                      <span className="text-base font-display font-semibold text-deep">
                         {activeStream.title}
                       </span>
                       <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold uppercase ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
                           activeStream.muxStatus === "active"
-                            ? "bg-red-500/15 text-red-600 animate-pulse"
-                            : "bg-amber-500/15 text-amber-800"
+                            ? "bg-red-500/15 text-red-600 border border-red-200 animate-pulse"
+                            : "bg-amber-500/15 text-amber-800 border border-amber-300/40"
                         }`}
                       >
                         <span
@@ -1175,49 +1214,49 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <a
                       href="/watch"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-4 py-2 rounded-full border border-deep/20 text-deep text-xs font-semibold hover:bg-deep/5 transition-colors inline-flex items-center gap-1.5"
+                      className="px-4 py-2 rounded-full border border-deep/15 text-deep text-xs font-semibold hover:bg-deep/5 transition-colors inline-flex items-center gap-1.5 shadow-xs"
                     >
                       <ExternalLink className="h-3.5 w-3.5 text-teal" />
-                      View Attendee Page (/watch)
+                      <span>Attendee View (/watch)</span>
                     </a>
                     <button
                       disabled={deletingStreamId === activeStream.id}
                       onClick={() => handleDeleteStream(activeStream.id)}
-                      className="px-4 py-2 rounded-full bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100 transition-colors inline-flex items-center gap-1.5"
+                      className="px-4 py-2 rounded-full bg-red-50 text-red-600 border border-red-200 text-xs font-semibold hover:bg-red-100 transition-colors inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
-                      {deletingStreamId === activeStream.id ? "Terminating..." : "Terminate Stream"}
+                      <span>{deletingStreamId === activeStream.id ? "Terminating..." : "Terminate Stream"}</span>
                     </button>
                   </div>
                 </div>
 
                 {/* RTMP Credentials Box */}
-                <div className="grid md:grid-cols-2 gap-4 text-xs">
-                  <div className="p-4 rounded-2xl bg-white border border-deep/15 space-y-2">
+                <div className="grid md:grid-cols-2 gap-5 text-xs">
+                  <div className="p-5 rounded-3xl bg-white border border-deep/10 shadow-xs space-y-2.5">
                     <div className="flex items-center justify-between text-deep/60">
-                      <span className="font-semibold uppercase tracking-wider">RTMP Server Ingest URL</span>
+                      <span className="font-semibold uppercase tracking-wider text-[11px]">RTMP Server Ingest URL</span>
                       <button
                         onClick={() => copyToClipboard(activeStream.rtmpIngestUrl || "rtmp://global-live.mux.com:5222/app", false)}
-                        className="text-teal hover:underline flex items-center gap-1 font-sans"
+                        className="text-teal hover:text-teal/80 flex items-center gap-1 font-medium rounded-full px-2.5 py-0.5 hover:bg-teal/10 transition-colors cursor-pointer"
                       >
                         {copiedUrl ? <Check className="h-3 w-3 text-teal" /> : <Copy className="h-3 w-3" />}
-                        {copiedUrl ? "Copied" : "Copy"}
+                        <span>{copiedUrl ? "Copied" : "Copy"}</span>
                       </button>
                     </div>
-                    <p className="font-mono text-deep bg-deep/[0.03] p-2.5 rounded-xl break-all">
+                    <p className="font-mono text-deep bg-deep/[0.03] p-3 rounded-2xl border border-deep/5 break-all">
                       {activeStream.rtmpIngestUrl || "rtmp://global-live.mux.com:5222/app"}
                     </p>
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-white border border-deep/15 space-y-2">
+                  <div className="p-5 rounded-3xl bg-white border border-deep/10 shadow-xs space-y-2.5">
                     <div className="flex items-center justify-between text-deep/60">
-                      <span className="font-semibold uppercase tracking-wider">Stream Key (Keep Secret)</span>
-                      <div className="flex items-center gap-3">
+                      <span className="font-semibold uppercase tracking-wider text-[11px]">Stream Key (Private)</span>
+                      <div className="flex items-center gap-2">
                         <button
                           onClick={() =>
                             setShowStreamKey((prev) => ({
@@ -1225,21 +1264,21 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
                               [activeStream.id]: !prev[activeStream.id],
                             }))
                           }
-                          className="text-deep/60 hover:text-deep flex items-center gap-1 font-sans"
+                          className="text-deep/60 hover:text-deep flex items-center gap-1 font-medium rounded-full px-2.5 py-0.5 hover:bg-deep/5 transition-colors cursor-pointer"
                         >
                           {showStreamKey[activeStream.id] ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                          {showStreamKey[activeStream.id] ? "Hide" : "Show"}
+                          <span>{showStreamKey[activeStream.id] ? "Hide" : "Show"}</span>
                         </button>
                         <button
                           onClick={() => copyToClipboard(activeStream.stream_key, true)}
-                          className="text-teal hover:underline flex items-center gap-1 font-sans font-medium"
+                          className="text-teal hover:text-teal/80 flex items-center gap-1 font-medium rounded-full px-2.5 py-0.5 hover:bg-teal/10 transition-colors cursor-pointer"
                         >
                           {copiedKey ? <Check className="h-3 w-3 text-teal" /> : <Copy className="h-3 w-3" />}
-                          {copiedKey ? "Copied" : "Copy Key"}
+                          <span>{copiedKey ? "Copied" : "Copy Key"}</span>
                         </button>
                       </div>
                     </div>
-                    <p className="font-mono text-deep bg-deep/[0.03] p-2.5 rounded-xl break-all">
+                    <p className="font-mono text-deep bg-deep/[0.03] p-3 rounded-2xl border border-deep/5 break-all">
                       {showStreamKey[activeStream.id]
                         ? activeStream.stream_key
                         : "••••••••••••••••••••••••••••••••••••••••"}
@@ -1253,7 +1292,7 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
                     <Video className="h-4 w-4 text-teal" />
                     Admin Live Monitor (Signed Token Test Player)
                   </h4>
-                  <div className="max-w-3xl rounded-3xl overflow-hidden shadow-lg border border-deep/15 aspect-video bg-black">
+                  <div className="max-w-3xl rounded-3xl overflow-hidden shadow-xl border border-deep/15 aspect-video bg-deep">
                     {activeStream.testToken ? (
                       <MuxPlayer
                         playbackId={activeStream.playback_id}
@@ -1274,25 +1313,23 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
               </div>
             ) : (
               /* Empty State */
-              <div className="py-12 text-center space-y-4 bg-deep/[0.02] rounded-3xl border border-dashed border-deep/20 p-8">
-                <div className="h-16 w-16 rounded-full bg-teal/15 flex items-center justify-center text-teal mx-auto">
-                  <Radio className="h-8 w-8" />
-                </div>
+              <div className="py-14 text-center space-y-4 bg-deep/[0.015] rounded-3xl border border-dashed border-deep/20 p-10">
+                <IconBadge icon={Radio} className="h-16 w-16 mx-auto mb-2" iconClassName="h-8 w-8 text-teal" />
                 <h4 className="font-display font-semibold text-xl text-deep">
                   No Active Live Stream Configured
                 </h4>
-                <p className="text-sm text-deep/60 max-w-md mx-auto">
+                <p className="text-sm text-deep/60 max-w-md mx-auto leading-relaxed">
                   Provision an encrypted Mux live stream with signed playback tokens to begin broadcasting to verified attendees.
                 </p>
-                <div className="pt-2">
+                <div className="pt-3">
                   <Button
                     variant="primary"
                     disabled={creatingStream}
                     onClick={handleCreateStream}
-                    className="px-6 py-3 text-sm inline-flex items-center gap-2 shadow-sm"
+                    className="px-7 py-3 text-sm inline-flex items-center gap-2 rounded-full shadow-sm"
                   >
                     <PlusCircle className="h-4 w-4" />
-                    {creatingStream ? "Provisioning Mux Stream..." : "Provision Main Stage Stream"}
+                    <span>{creatingStream ? "Provisioning Mux Stream..." : "Provision Main Stage Stream"}</span>
                   </Button>
                 </div>
               </div>
@@ -1300,23 +1337,23 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
           </GlassCard>
 
           {/* Broadcaster Guide */}
-          <GlassCard className="p-6 space-y-4">
+          <GlassCard className="p-7 space-y-5">
             <h4 className="font-display font-semibold text-lg text-deep flex items-center gap-2">
               <Info className="h-5 w-5 text-teal" />
-              Broadcaster Setup Guide (OBS Studio / vMix / Hardware)
+              Broadcaster Setup Guide (OBS Studio / vMix / Hardware Encoders)
             </h4>
-            <div className="grid md:grid-cols-3 gap-4 text-xs text-deep/75">
-              <div className="p-4 bg-deep/[0.02] rounded-2xl space-y-1.5 border border-deep/10">
-                <span className="font-bold text-deep block">1. OBS Stream Settings</span>
-                <p>Go to Settings ➔ Stream ➔ Service: <b>Custom</b>. Paste the RTMP Server URL and your secret Stream Key.</p>
+            <div className="grid md:grid-cols-3 gap-5 text-xs text-deep/75">
+              <div className="p-5 bg-deep/[0.02] rounded-3xl space-y-2 border border-deep/10 shadow-xs">
+                <span className="font-bold text-deep block text-sm">1. OBS Stream Settings</span>
+                <p className="leading-relaxed">Go to Settings ➔ Stream ➔ Service: <b>Custom</b>. Paste the RTMP Server URL and your secret Stream Key.</p>
               </div>
-              <div className="p-4 bg-deep/[0.02] rounded-2xl space-y-1.5 border border-deep/10">
-                <span className="font-bold text-deep block">2. Video &amp; Bitrate</span>
-                <p>Resolution: <b>1080p (1920x1080)</b> or 720p. Video Bitrate: <b>4500 - 6000 Kbps</b>. Audio: 128 - 192 Kbps AAC.</p>
+              <div className="p-5 bg-deep/[0.02] rounded-3xl space-y-2 border border-deep/10 shadow-xs">
+                <span className="font-bold text-deep block text-sm">2. Video &amp; Bitrate</span>
+                <p className="leading-relaxed">Resolution: <b>1080p (1920x1080)</b> or 720p. Video Bitrate: <b>4500 - 6000 Kbps</b>. Audio: 128 - 192 Kbps AAC.</p>
               </div>
-              <div className="p-4 bg-deep/[0.02] rounded-2xl space-y-1.5 border border-deep/10">
-                <span className="font-bold text-deep block">3. Keyframe Interval</span>
-                <p>Set Keyframe Interval to <b>2 seconds</b> (GOP size = 60 frames at 30fps) for optimal HLS latency.</p>
+              <div className="p-5 bg-deep/[0.02] rounded-3xl space-y-2 border border-deep/10 shadow-xs">
+                <span className="font-bold text-deep block text-sm">3. Keyframe Interval</span>
+                <p className="leading-relaxed">Set Keyframe Interval to <b>2 seconds</b> (GOP size = 60 frames at 30fps) for optimal low-latency HLS delivery.</p>
               </div>
             </div>
           </GlassCard>
@@ -1325,21 +1362,22 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
 
       {/* Tab 5: AUDIT LOGS WITH RICH FILTERS */}
       {activeTab === "logs" && (
-        <GlassCard className="p-6 space-y-6">
+        <GlassCard className="p-7 space-y-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <h3 className="font-display font-semibold text-lg text-deep">
+              <span className="eyebrow text-teal block mb-1">Audit Trail</span>
+              <h3 className="font-display font-semibold text-xl text-deep">
                 System &amp; Payment Audit Logs
               </h3>
-              <p className="text-xs text-deep/60">
+              <p className="text-xs text-deep/60 mt-1">
                 Immutable audit trail of authentication attempts, administrative overrides, stream events, and payment operations.
               </p>
             </div>
 
             <Button
               variant="ghost"
-              onClick={fetchLogs}
-              className="flex items-center gap-2 px-3 py-1.5 text-xs"
+              onClick={() => fetchLogs()}
+              className="flex items-center gap-2 px-4 py-2 text-xs font-semibold"
             >
               <RefreshCw className="h-3.5 w-3.5" />
               Refresh Logs
@@ -1347,26 +1385,44 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
           </div>
 
           {/* Audit Logs Filter Bar */}
-          <div className="flex flex-col lg:flex-row gap-4 justify-between items-stretch lg:items-center bg-deep/[0.02] p-3.5 rounded-2xl border border-deep/10">
+          <div className="flex flex-col lg:flex-row gap-4 justify-between items-stretch lg:items-center bg-deep/[0.02] p-4 rounded-3xl border border-deep/10 shadow-xs">
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-deep/40" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-deep/40" />
               <input
                 type="text"
                 placeholder="Search logs by message, event, IP, ID, or JSON..."
                 value={searchLog}
                 onChange={(e) => setSearchLog(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-paper rounded-xl border border-deep/15 text-xs text-deep placeholder:text-deep/40 focus:outline-none focus:border-deep"
+                className="w-full pl-11 pr-4 py-2.5 bg-paper rounded-full border border-deep/15 text-xs text-deep placeholder:text-deep/40 focus:outline-none focus:border-teal focus:ring-1 focus:ring-teal/30 transition-colors"
               />
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
+              {/* Table Source Filter */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-deep/60 whitespace-nowrap">Source:</span>
+                <select
+                  value={filterLogSource}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFilterLogSource(val);
+                    fetchLogs(val);
+                  }}
+                  className="px-3.5 py-2 bg-paper rounded-full border border-deep/15 text-xs text-deep focus:outline-none focus:border-teal"
+                >
+                  <option value="all">All Logs (Merged)</option>
+                  <option value="payment">Payments Only (payment_logs)</option>
+                  <option value="system">System &amp; Auth (system_logs)</option>
+                </select>
+              </div>
+
               {/* Event Type Filter */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-deep/60 whitespace-nowrap">Event:</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-deep/60 whitespace-nowrap">Event:</span>
                 <select
                   value={filterLogEvent}
                   onChange={(e) => setFilterLogEvent(e.target.value)}
-                  className="px-3 py-2 bg-paper rounded-xl border border-deep/15 text-xs text-deep focus:outline-none"
+                  className="px-3.5 py-2 bg-paper rounded-full border border-deep/15 text-xs text-deep focus:outline-none focus:border-teal"
                 >
                   <option value="all">All Events</option>
                   {uniqueLogEvents.map((evt) => (
@@ -1378,12 +1434,12 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
               </div>
 
               {/* Severity Level Filter */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-deep/60 whitespace-nowrap">Level:</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-deep/60 whitespace-nowrap">Level:</span>
                 <select
                   value={filterLogLevel}
                   onChange={(e) => setFilterLogLevel(e.target.value)}
-                  className="px-3 py-2 bg-paper rounded-xl border border-deep/15 text-xs text-deep focus:outline-none"
+                  className="px-3.5 py-2 bg-paper rounded-full border border-deep/15 text-xs text-deep focus:outline-none focus:border-teal"
                 >
                   <option value="all">All Levels</option>
                   <option value="info">Info</option>
@@ -1395,51 +1451,63 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
           </div>
 
           {/* Logs Table */}
-          <div className="overflow-x-auto rounded-xl border border-deep/10 bg-white">
+          <div className="overflow-x-auto rounded-3xl border border-deep/10 bg-white shadow-xs">
             <table className="w-full text-left text-sm font-mono">
-              <thead className="bg-deep/[0.03] text-xs uppercase border-b border-deep/10 font-sans font-semibold text-deep/70">
+              <thead className="bg-deep/[0.025] text-[11px] uppercase tracking-wider border-b border-deep/10 font-sans font-semibold text-deep/70">
                 <tr>
-                  <th className="px-4 py-3">Timestamp</th>
-                  <th className="px-4 py-3">Level</th>
-                  <th className="px-4 py-3">Event</th>
-                  <th className="px-4 py-3">Message</th>
-                  <th className="px-4 py-3">IP Address</th>
-                  <th className="px-4 py-3 text-right">Details</th>
+                  <th className="px-5 py-3.5">Timestamp</th>
+                  <th className="px-5 py-3.5">Source</th>
+                  <th className="px-5 py-3.5">Level</th>
+                  <th className="px-5 py-3.5">Event</th>
+                  <th className="px-5 py-3.5">Message</th>
+                  <th className="px-5 py-3.5">IP Address</th>
+                  <th className="px-5 py-3.5 text-right font-sans">Details</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-deep/5 text-xs">
                 {filteredLogs.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-deep/50 font-sans">
+                    <td colSpan={7} className="px-5 py-12 text-center text-deep/50 font-sans">
                       No audit logs match the selected filter criteria.
                     </td>
                   </tr>
                 ) : (
                   filteredLogs.map((log) => (
                     <tr key={log.id} className="hover:bg-deep/[0.015] transition-colors">
-                      <td className="px-4 py-3 text-deep/60 whitespace-nowrap">
+                      <td className="px-5 py-3.5 text-deep/60 whitespace-nowrap text-[11px]">
                         {new Date(log.created_at).toLocaleString()}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-5 py-3.5">
                         <span
-                          className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${
+                            log.log_source === "payment"
+                              ? "bg-teal/15 text-teal border border-teal/20"
+                              : "bg-deep/[0.06] text-deep/70 border border-deep/10"
+                          }`}
+                        >
+                          {log.log_source === "payment" ? "Payment" : "System"}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span
+                          className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                             log.level === "error"
-                              ? "bg-red-100 text-red-700"
+                              ? "bg-red-50 text-red-700 border border-red-200/60"
                               : log.level === "warn"
-                              ? "bg-amber-100 text-amber-800"
-                              : "bg-teal/15 text-teal"
+                              ? "bg-amber-50 text-amber-800 border border-amber-200/60"
+                              : "bg-teal/15 text-teal border border-teal/20"
                           }`}
                         >
                           {log.level}
                         </span>
                       </td>
-                      <td className="px-4 py-3 font-semibold text-deep font-mono">{log.event}</td>
-                      <td className="px-4 py-3 text-deep/80 max-w-md truncate font-sans">{log.message}</td>
-                      <td className="px-4 py-3 text-deep/60">{log.ip_address || "—"}</td>
-                      <td className="px-4 py-3 text-right font-sans">
+                      <td className="px-5 py-3.5 font-semibold text-deep font-mono text-[11px]">{log.event}</td>
+                      <td className="px-5 py-3.5 text-deep/80 max-w-md truncate font-sans text-xs">{log.message}</td>
+                      <td className="px-5 py-3.5 text-deep/60 font-mono text-[11px]">{log.ip_address || "—"}</td>
+                      <td className="px-5 py-3.5 text-right font-sans">
                         <button
                           onClick={() => setSelectedLogDetail(log)}
-                          className="inline-flex items-center gap-1 text-xs text-teal hover:underline font-medium"
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs text-teal hover:bg-teal/10 transition-colors font-medium"
                         >
                           <Eye className="h-3.5 w-3.5" />
                           Inspect
@@ -1457,65 +1525,76 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
       {/* Log Details Modal */}
       {selectedLogDetail && (
         <div className="fixed inset-0 z-50 bg-deep/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl border border-deep/15 space-y-5 animate-in fade-in zoom-in duration-200">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl border border-deep/10 space-y-6 animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <span
-                  className={`inline-flex px-2.5 py-1 rounded text-xs font-bold uppercase ${
+                  className={`inline-flex px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
                     selectedLogDetail.level === "error"
-                      ? "bg-red-100 text-red-700"
+                      ? "bg-red-50 text-red-700 border border-red-200/60"
                       : selectedLogDetail.level === "warn"
-                      ? "bg-amber-100 text-amber-800"
-                      : "bg-teal/15 text-teal"
+                      ? "bg-amber-50 text-amber-800 border border-amber-200/60"
+                      : "bg-teal/15 text-teal border border-teal/20"
                   }`}
                 >
                   {selectedLogDetail.level}
                 </span>
+                {selectedLogDetail.log_source && (
+                  <span
+                    className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${
+                      selectedLogDetail.log_source === "payment"
+                        ? "bg-teal/15 text-teal border border-teal/20"
+                        : "bg-deep/[0.06] text-deep/70 border border-deep/10"
+                    }`}
+                  >
+                    {selectedLogDetail.log_source === "payment" ? "payment_logs" : "system_logs"}
+                  </span>
+                )}
                 <h3 className="font-mono font-bold text-base text-deep">
                   {selectedLogDetail.event}
                 </h3>
               </div>
               <button
                 onClick={() => setSelectedLogDetail(null)}
-                className="text-deep/40 hover:text-deep p-1 rounded-lg"
+                className="text-deep/40 hover:text-deep p-1.5 rounded-full hover:bg-deep/5 transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
-              <div className="p-3 bg-deep/[0.03] rounded-xl text-deep">
-                <span className="font-semibold text-deep/70 block mb-1">Message:</span>
-                <p className="font-sans text-sm">{selectedLogDetail.message}</p>
+            <div className="space-y-4 text-xs">
+              <div className="p-4 bg-deep/[0.025] rounded-2xl border border-deep/10 text-deep">
+                <span className="font-semibold text-deep/70 block mb-1">Message</span>
+                <p className="font-sans text-sm leading-relaxed">{selectedLogDetail.message}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3 text-deep/80">
-                <div className="p-3 bg-deep/[0.03] rounded-xl">
-                  <span className="text-deep/60 block">Timestamp:</span>
-                  <span className="font-mono">{new Date(selectedLogDetail.created_at).toLocaleString()}</span>
+                <div className="p-3.5 bg-deep/[0.025] rounded-2xl border border-deep/10">
+                  <span className="text-deep/60 block text-[11px] font-semibold mb-0.5">Timestamp</span>
+                  <span className="font-mono text-xs">{new Date(selectedLogDetail.created_at).toLocaleString()}</span>
                 </div>
-                <div className="p-3 bg-deep/[0.03] rounded-xl">
-                  <span className="text-deep/60 block">IP Address:</span>
-                  <span className="font-mono">{selectedLogDetail.ip_address || "—"}</span>
+                <div className="p-3.5 bg-deep/[0.025] rounded-2xl border border-deep/10">
+                  <span className="text-deep/60 block text-[11px] font-semibold mb-0.5">IP Address</span>
+                  <span className="font-mono text-xs">{selectedLogDetail.ip_address || "—"}</span>
                 </div>
                 {selectedLogDetail.registration_id && (
-                  <div className="p-3 bg-deep/[0.03] rounded-xl col-span-2">
-                    <span className="text-deep/60 block">Registration ID:</span>
-                    <span className="font-mono">{selectedLogDetail.registration_id}</span>
+                  <div className="p-3.5 bg-deep/[0.025] rounded-2xl border border-deep/10 col-span-2">
+                    <span className="text-deep/60 block text-[11px] font-semibold mb-0.5">Registration ID</span>
+                    <span className="font-mono text-xs">{selectedLogDetail.registration_id}</span>
                   </div>
                 )}
                 {selectedLogDetail.payment_id && (
-                  <div className="p-3 bg-deep/[0.03] rounded-xl col-span-2">
-                    <span className="text-deep/60 block">Payment ID:</span>
-                    <span className="font-mono">{selectedLogDetail.payment_id}</span>
+                  <div className="p-3.5 bg-deep/[0.025] rounded-2xl border border-deep/10 col-span-2">
+                    <span className="text-deep/60 block text-[11px] font-semibold mb-0.5">Payment ID</span>
+                    <span className="font-mono text-xs">{selectedLogDetail.payment_id}</span>
                   </div>
                 )}
               </div>
 
               {selectedLogDetail.metadata && (
-                <div className="space-y-1">
-                  <span className="font-semibold text-deep/70 block">Metadata JSON:</span>
-                  <pre className="p-4 bg-deep/[0.04] rounded-xl font-mono text-[11px] overflow-x-auto text-deep/90 border border-deep/10">
+                <div className="space-y-2">
+                  <span className="font-semibold text-deep/70 block">Metadata JSON</span>
+                  <pre className="p-4 bg-deep/[0.03] rounded-2xl font-mono text-[11px] overflow-x-auto text-deep/90 border border-deep/10 leading-relaxed">
                     {JSON.stringify(selectedLogDetail.metadata, null, 2)}
                   </pre>
                 </div>
@@ -1526,7 +1605,7 @@ export default function AdminDashboard({ currentUser }: AdminDashboardProps) {
               <Button
                 variant="ghost"
                 onClick={() => setSelectedLogDetail(null)}
-                className="px-5 py-2 text-xs"
+                className="px-6 py-2 text-xs font-semibold"
               >
                 Close
               </Button>

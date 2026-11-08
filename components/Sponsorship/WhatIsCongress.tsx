@@ -25,8 +25,8 @@ export default function WhatIsCongress({ pageData, pillars }: WhatIsCongressProp
   const validPillars = pillars?.filter((p) => p.title) || [];
 
   return (
-    <section className="w-full bg-paper py-16 md:py-24 px-6 border-t border-deep/10">
-      <div className="max-w-6xl mx-auto space-y-16">
+    <section className="relative w-full bg-paper py-16 md:py-20 px-6 border-t border-deep/10">
+      <div className="max-w-6xl mx-auto space-y-12 md:space-y-16">
         <SectionHeading
           eyebrow={pageData?.whatIsCongressEyebrow || "The Congress Explained"}
           title={pageData?.whatIsCongressTitle || "What is Blue Mind Congress 2027?"}
@@ -40,7 +40,7 @@ export default function WhatIsCongress({ pageData, pillars }: WhatIsCongressProp
 
         {/* Narrative Box */}
         {(pageData?.manifestoQuote || !pageData) && (
-          <GlassCard className="p-8 md:p-12 max-w-4xl mx-auto bg-gradient-to-b from-teal/[0.04] to-deep/[0.02]">
+          <GlassCard className="p-7 md:p-10 max-w-4xl mx-auto bg-gradient-to-b from-teal/[0.04] to-deep/[0.02]">
             <div className="space-y-4 text-center">
               <p className="text-xl md:text-2xl font-display font-medium text-deep leading-snug">
                 &ldquo;
@@ -61,7 +61,7 @@ export default function WhatIsCongress({ pageData, pillars }: WhatIsCongressProp
 
         {/* Pillar Cards */}
         {validPillars.length > 0 && (
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-6">
             {validPillars.map((pillar, i) => {
               const Icon = (pillar.iconType && PILLAR_ICON_MAP[pillar.iconType]) || Brain;
 

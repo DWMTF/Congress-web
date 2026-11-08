@@ -146,7 +146,7 @@ export default function RegistrationSection() {
   return (
     <section
       id="register"
-      className="relative w-full bg-paper py-20 md:py-28 px-6 overflow-hidden"
+      className="relative w-full bg-paper py-12 md:py-16 px-6 overflow-hidden"
     >
       <div className="absolute inset-0 bg-gradient-to-b from-teal/[0.04] to-transparent pointer-events-none" />
 
@@ -155,7 +155,7 @@ export default function RegistrationSection() {
         title="Reserve your place"
         subtitle="Four short steps. No long forms, no clutter."
         align="center"
-        className="relative mx-auto mb-14"
+        className="relative mx-auto mb-10"
       />
 
       {/* ── Gate + login ───────────────────────────────────────── */}
@@ -439,6 +439,13 @@ export default function RegistrationSection() {
                         <Button onClick={() => router.push("/payment")} className="px-8">
                           Complete payment →
                         </Button>
+                        <button
+                          type="button"
+                          onClick={() => router.push("/")}
+                          className="mt-4 text-xs font-medium text-deep/50 hover:text-deep hover:underline underline-offset-4 transition-colors cursor-pointer"
+                        >
+                          I&apos;ll pay later
+                        </button>
                       </motion.div>
                     )}
                   </AnimatePresence>

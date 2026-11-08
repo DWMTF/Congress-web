@@ -201,14 +201,16 @@ export default function Navbar({ title, logoUrl }: NavbarProps = {}) {
                     <LayoutDashboard className="h-4 w-4 text-teal shrink-0" />
                     Admin Dashboard
                   </Link>
-                  <Link
+                  <a
                     href="/studio"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     onClick={() => setMenuOpen(false)}
                     className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-teal hover:bg-teal/[0.08] transition-colors"
                   >
                     <PenTool className="h-4 w-4 text-teal shrink-0" />
                     Content CMS (Studio)
-                  </Link>
+                  </a>
                   <div className="border-t border-deep/10" />
                 </>
               )}

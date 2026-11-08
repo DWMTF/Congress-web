@@ -15,7 +15,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   href?: undefined;
 }
 
-interface LinkButtonProps {
+interface LinkButtonProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   variant?: Variant;
   href: string;
   className?: string;
@@ -31,20 +31,38 @@ export function Button({ variant = "primary", className, ...props }: ButtonProps
   );
 }
 
-export function LinkButton({ variant = "primary", href, className, children }: LinkButtonProps) {
-  const isExternalAnchor = href.startsWith("#");
+export function LinkButton({
+  variant = "primary",
+  href,
+  className,
+  children,
+  target,
+  rel,
+  ...props
+}: LinkButtonProps) {
+  const isExternal =
+    href.startsWith("#") ||
+    href.startsWith("http") ||
+    target === "_blank" ||
+    href.startsWith("/studio");
   const classes = cn(base, VARIANT_CLASSES[variant], className);
 
-  if (isExternalAnchor) {
+  if (isExternal) {
     return (
-      <a href={href} className={classes}>
+      <a
+        href={href}
+        className={classes}
+        target={target}
+        rel={target === "_blank" ? (rel ?? "noopener noreferrer") : rel}
+        {...props}
+      >
         {children}
       </a>
     );
   }
 
   return (
-    <Link href={href} className={classes}>
+    <Link href={href} className={classes} {...props}>
       {children}
     </Link>
   );

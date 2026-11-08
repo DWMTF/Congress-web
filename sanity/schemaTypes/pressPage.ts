@@ -24,5 +24,18 @@ export const pressPage = defineType({
       rows: 2,
       initialValue: "Approved assets, facts and figures ready to use, no permissions needed.",
     }),
+    defineField({
+      name: "videoFile",
+      title: "Hero Background Video Upload (MP4 / WebM)",
+      type: "file",
+      options: {
+        accept: "video/mp4,video/webm",
+      },
+    }),
+    defineField({
+      name: "videoUrl",
+      title: "Alternative Video URL (Direct MP4 URL)",
+      type: "url",
+    }),
   ],
 });

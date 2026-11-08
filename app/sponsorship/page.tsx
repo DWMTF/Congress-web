@@ -6,10 +6,12 @@ import SponsorshipInquiry from "@/components/Sponsorship/SponsorshipInquiry";
 import ContactSection from "@/components/Contact/ContactSection";
 import { safeSanityFetch } from "@/sanity/lib/client";
 import {
+  HERO_QUERY,
   SITE_SETTINGS_QUERY,
   SPONSORSHIP_PAGE_QUERY,
   SPONSORSHIP_PILLARS_QUERY,
   SPONSORSHIP_QUERY,
+  type HeroData,
   type SiteSettingsData,
   type SponsorshipPageData,
   type SponsorshipPillarData,
@@ -25,17 +27,24 @@ export const metadata = {
 export const revalidate = 60;
 
 export default async function SponsorshipPage() {
-  const [tiers, settings, pageData, pillars] = await Promise.all([
+  const [tiers, settings, pageData, pillars, heroData] = await Promise.all([
     safeSanityFetch<SponsorshipTierData[]>(SPONSORSHIP_QUERY, {}, ["sponsorshipTier"]),
     safeSanityFetch<SiteSettingsData>(SITE_SETTINGS_QUERY, {}, ["siteSettings"]),
     safeSanityFetch<SponsorshipPageData>(SPONSORSHIP_PAGE_QUERY, {}, ["sponsorshipPage"]),
     safeSanityFetch<SponsorshipPillarData[]>(SPONSORSHIP_PILLARS_QUERY, {}, ["sponsorshipPillar"]),
+    safeSanityFetch<HeroData>(HERO_QUERY, {}, ["heroSection"]),
   ]);
+
+  const videoSrc =
+    pageData?.videoFileUrl ||
+    pageData?.videoUrl ||
+    heroData?.videoFileUrl ||
+    heroData?.videoUrl;
 
   return (
     <main className="bg-paper min-h-screen">
       <Navbar title={settings?.title} logoUrl={settings?.logoUrl} />
-      <SponsorshipHero data={pageData} />
+      <SponsorshipHero data={pageData} videoSrc={videoSrc} />
       <WhatIsCongress pageData={pageData} pillars={pillars} />
       <WhatYouGet
         tiers={tiers}

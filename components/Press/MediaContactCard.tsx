@@ -16,7 +16,7 @@ export default function MediaContactCard({ settings }: MediaContactCardProps) {
   }
 
   return (
-    <section className="w-full bg-paper py-16 md:py-24 px-6">
+    <section className="w-full bg-paper py-12 md:py-16 px-6">
       <GlassCard className="max-w-2xl mx-auto p-8 md:p-12 text-center">
         <p className="eyebrow text-teal mb-4">Media contact</p>
 

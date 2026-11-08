@@ -110,7 +110,7 @@ export default function PaymentSection() {
   const attendanceLabel = isLivestream ? "Livestream" : "In Person";
 
   return (
-    <section className="relative w-full bg-paper py-20 md:py-28 px-6 overflow-hidden">
+    <section className="relative w-full bg-paper py-12 md:py-16 px-6 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-teal/[0.04] to-transparent pointer-events-none" />
 
       <div className="relative max-w-xl mx-auto">
@@ -217,6 +217,15 @@ export default function PaymentSection() {
             </button>
           </p>
         )}
+
+        <p className="text-center mt-3 text-xs text-deep/40">
+          <button
+            onClick={() => router.push("/")}
+            className="text-deep/50 hover:text-deep underline underline-offset-2 transition-colors cursor-pointer"
+          >
+            I&apos;ll pay later — Return to Home
+          </button>
+        </p>
       </div>
     </section>
   );

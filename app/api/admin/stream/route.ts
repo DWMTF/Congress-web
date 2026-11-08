@@ -123,9 +123,17 @@ export async function POST(req: NextRequest) {
       },
       message: "Live stream provisioned successfully.",
     });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to create Mux stream";
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch (err: unknown) {
+    let message = "Failed to create Mux stream";
+    if (err instanceof Error) {
+      if (err.message.includes("Live streams are unavailable on the free plan")) {
+        message =
+          "Live streams are unavailable on your Mux Free Plan. Please add a payment method in your Mux Dashboard (Settings ➔ Billing) to unlock live stream broadcasting.";
+      } else {
+        message = err.message;
+      }
+    }
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }
 
